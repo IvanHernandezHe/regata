@@ -18,7 +18,7 @@ public sealed class AppDbContext
         b.Entity<Product>(e =>
         {
             e.HasKey(p => p.Id);
-            e.Property(p => p.Price).HasPrecision(18, 2);
+            e.Property(p => p.Price).HasConversion<double>();
             e.HasIndex(p => p.Sku).IsUnique();
         });
     }

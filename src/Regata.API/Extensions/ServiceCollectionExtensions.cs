@@ -8,15 +8,17 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration cfg)
     {
-        var provider = cfg.GetSection("Database")["Provider"] ?? "Postgres";
-        var cs = cfg.GetSection("Database")["ConnectionString"] ?? "";
+        var provider = cfg.GetSection("Database")["Provider"] ?? "Sqlite";
+        var cs = cfg.GetSection("Database")["ConnectionString"] ?? "Data Source=./AppData/regata.db";
 
         services.AddDbContext<AppDbContext>(opt =>
         {
             if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
                 opt.UseSqlServer(cs);
+            else if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+                opt.UseSqlite(cs);
             else
-                opt.UseNpgsql(cs);
+                opt.UseSqlite(cs); // fallback seguro a Sqlite
         });
 
         services
