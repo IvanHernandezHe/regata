@@ -1,6 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { Product } from '../../../core/models/product.model';
 import { CurrencyPipe } from '@angular/common';
+import { CartStore } from '../../../state/cart.store';
 
 @Component({
   standalone: true,
@@ -22,9 +23,9 @@ import { CurrencyPipe } from '@angular/common';
 })
 export class ProductCardComponent {
   @Input({ required: true }) product!: Product;
+  #cart = inject(CartStore);
 
   addToCart() {
-    // emite evento o usa un CartStore inyectable si lo prefieres
-    console.warn('TODO: conectar con CartStore desde el padre');
+    this.#cart.add(this.product);
   }
 }

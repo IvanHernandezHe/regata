@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartStore } from '../../../state/cart.store';
 import { NgIf } from '@angular/common';
@@ -31,5 +31,5 @@ import { NgIf } from '@angular/common';
   `
 })
 export class NavbarComponent {
-  cart = new CartStore();
+  cart = inject(CartStore);
 }

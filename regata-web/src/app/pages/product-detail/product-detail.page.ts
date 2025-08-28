@@ -1,12 +1,9 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { NgIf, CurrencyPipe } from '@angular/common';
-
-type Product = {
-  id: string; sku: string; brand: string; modelName: string; size: string;
-  price: number; stock: number; active: boolean;
-};
+import { Product } from '../../core/models/product.model';
+import { ApiService } from '../../core/api.service';
+import { CartStore } from '../../state/cart.store';
 
 @Component({
   standalone: true,
@@ -39,16 +36,18 @@ type Product = {
 })
 export class ProductDetailPage implements OnInit {
   private route = inject(ActivatedRoute);
-  private http = inject(HttpClient);
+  private api = inject(ApiService);
+  private cart = inject(CartStore);
   product?: Product;
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id')!;
-    this.http.get<Product>(`/api/products/${id}`).subscribe(p => this.product = p);
+    this.api.getProduct(id).subscribe(p => this.product = p);
   }
 
   addToCart() {
-    // aquí puedes inyectar tu CartStore cuando lo tengas listo
-    alert('TODO: conectar con CartStore e incrementar cantidad');
+    if (this.product) {
+      this.cart.add(this.product);
+    }
   }
 }

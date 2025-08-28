@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CartStore } from '../../state/cart.store';
 import { CurrencyPipe } from '@angular/common';
 
@@ -14,7 +14,7 @@ import { CurrencyPipe } from '@angular/common';
   `
 })
 export class CheckoutPage {
-  cart = new CartStore();
+  cart = inject(CartStore);
   pay() {
     // Próximo paso: llamar a POST /api/checkout y redirigir a checkoutUrl
     alert('TODO: integrar Stripe/Mercado Pago');

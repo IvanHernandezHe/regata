@@ -24,6 +24,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Serve SPA static files if present (wwwroot)
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapControllers();
 app.MapGroup("/api/auth").MapIdentityApi<Microsoft.AspNetCore.Identity.IdentityUser<Guid>>();
 
@@ -33,5 +37,8 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
     await Regata.Infrastructure.Seed.DataSeeder.SeedAsync(db);
 }
+
+// Client-side routing fallback to index.html (if file exists)
+app.MapFallbackToFile("index.html");
 
 app.Run();

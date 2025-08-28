@@ -18,6 +18,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, regata-web');
+    // Root template should include navbar and router outlet
+    expect(compiled.querySelector('app-navbar')).toBeTruthy();
   });
 });
