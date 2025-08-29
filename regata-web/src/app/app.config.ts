@@ -2,7 +2,7 @@ import { ApplicationConfig, importProvidersFrom, provideBrowserGlobalErrorListen
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import { LucideAngularModule, ShoppingCart, User } from 'lucide-angular';
+import { LucideAngularModule, ShoppingCart, User, Search, X } from 'lucide-angular';
 
 
 
@@ -13,6 +13,6 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withFetch()),
-    importProvidersFrom(LucideAngularModule.pick({ ShoppingCart, User })),
+    importProvidersFrom(LucideAngularModule.pick({ ShoppingCart, User, Search, X })),
   ]
 };

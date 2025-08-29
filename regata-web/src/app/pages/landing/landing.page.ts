@@ -10,62 +10,38 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
   standalone: true,
   imports: [RouterLink, NgFor, NgIf, AsyncPipe, SlicePipe, ProductCardComponent, FormsModule],
   styles: [`
+    /* Hero */
     .hero {
       position: relative;
-      background: radial-gradient(1200px 600px at 20% -20%, #ff6b6b33, transparent),
-                  radial-gradient(1200px 600px at 120% 0%, #845ef733, transparent),
-                  linear-gradient(180deg, #111 0%, #1a1a1a 100%);
-      color: #fff;
+      background: linear-gradient(180deg, #f8f9fa, #ffffff);
     }
-    .hero-overlay {
-      backdrop-filter: blur(2px);
+    .hero-img {
+      width: 100%;
+      max-width: 520px;
+      height: auto;
+      object-fit: cover;
     }
-    .floating-wa {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      z-index: 1050;
+    .search-panel {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: .75rem;
+      padding: 1rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,.04);
     }
-    .floating-wa .btn-wa {
-      display: inline-flex;
-      align-items: center;
-      gap: .5rem;
-      background: #25D366;
-      border: none;
-      color: #fff;
-      padding: .75rem 1rem;
-      border-radius: 999px;
-      box-shadow: 0 6px 18px rgba(0,0,0,.2);
-      text-decoration: none;
+    .pill {
+      border-radius: .75rem;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.08);
+      padding: .85rem 1rem;
+      text-align: center;
       font-weight: 600;
     }
-    .floating-wa svg { flex: 0 0 auto; }
-    .feature {
-      border-radius: .75rem;
-      border: 1px solid rgba(0,0,0,.08);
-      background: #fff;
-    }
-    .category-tile {
-      border-radius: .75rem;
-      overflow: hidden;
-      position: relative;
-      background: #f8f9fa;
-      min-height: 160px;
-    }
-    .category-tile a { position: absolute; inset: 0; }
-    .category-tile h5 { position: absolute; left: 1rem; bottom: 1rem; margin: 0; }
-    .trust-logos img { max-height: 28px; opacity: .9; }
+    .pill small { display: block; font-weight: 400; color: #6c757d; }
+    .section-title { font-weight: 700; }
 
     /* Promo carousel (CSS-only auto-scroll) */
-    .promo-carousel {
-      overflow: hidden;
-      border-radius: .75rem;
-    }
-    .promo-track {
-      display: flex;
-      width: max-content;
-      animation: promo-scroll 24s linear infinite;
-    }
+    .promo-carousel { overflow: hidden; border-radius: .75rem; }
+    .promo-track { display: flex; width: max-content; animation: promo-scroll 24s linear infinite; }
     .promo-item { position: relative; min-width: 100%; }
     .promo-item img { width: 100%; height: 320px; object-fit: cover; display: block; }
     .promo-caption { position: absolute; inset: auto 0 0 0; padding: 1rem 1.25rem; color: #fff; background: linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,0)); }
@@ -78,41 +54,91 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
       100% { transform: translateX(-200%); }
     }
 
-    .service-card {
-      border-radius: .75rem;
-      border: 1px solid rgba(0,0,0,.08);
-      background: #fff;
-      padding: 1rem;
-      height: 100%;
-    }
+    /* Generic boxes */
+    .feature { border-radius: .75rem; border: 1px solid rgba(0,0,0,.08); background: #fff; }
+    .category-tile { border-radius: .75rem; overflow: hidden; position: relative; background: #f8f9fa; min-height: 160px; }
+    .category-tile a { position: absolute; inset: 0; }
+    .category-tile h5 { position: absolute; left: 1rem; bottom: 1rem; margin: 0; }
+    .trust-logos img { max-height: 28px; opacity: .9; }
+
+    .service-card { border-radius: .75rem; border: 1px solid rgba(0,0,0,.08); background: #fff; padding: 1rem; height: 100%; }
     .brand-logos img { max-height: 38px; filter: grayscale(1) contrast(.9); opacity: .85; }
     .brand-logos img:hover { filter: none; opacity: 1; }
-    .cashback {
-      border-radius: .75rem;
-      background: linear-gradient(135deg, #111 0%, #1e1e1e 60%, #2a2a2a 100%);
-      color: #fff;
-      overflow: hidden;
-    }
+    .cashback { border-radius: .75rem; background: linear-gradient(135deg, #111 0%, #1e1e1e 60%, #2a2a2a 100%); color: #fff; overflow: hidden; }
     .coupon-card { border-radius: .75rem; border: 2px dashed #e0e0e0; background: #fff; }
-    .info-split {
-      border-radius: .75rem; border: 1px solid rgba(0,0,0,.08); background: #fff;
+    .info-split { border-radius: .75rem; border: 1px solid rgba(0,0,0,.08); background: #fff; }
+
+    /* Floating WhatsApp */
+    .floating-wa { position: fixed; right: 16px; bottom: 16px; z-index: 1050; }
+    .floating-wa .btn-wa {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: #25D366; border: none; color: #fff; padding: .75rem 1rem;
+      border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.2); text-decoration: none; font-weight: 600;
+    }
+    .floating-wa svg { flex: 0 0 auto; }
+
+    /* Responsive tweaks */
+    @media (min-width: 992px) {
+      .search-panel { padding: 1.25rem 1.5rem; }
     }
   `],
   template: `
-  <!-- Hero -->
-  <header class="hero py-5 py-lg-6 mb-4">
-    <div class="container hero-overlay">
+  <!-- Hero with search panel -->
+  <header class="hero py-4 py-lg-5 mb-4">
+    <div class="container">
       <div class="row align-items-center g-4">
-        <div class="col-lg-7 text-center text-lg-start">
-          <h1 class="display-5 fw-bold mb-2">Llantas a domicilio, fácil y rápido</h1>
-          <p class="lead mb-4">Compra en línea, agenda instalación y acumula recompensas en cada pedido.</p>
-          <div class="d-flex gap-2 justify-content-center justify-content-lg-start">
-            <a class="btn btn-danger btn-lg px-4" routerLink="/shop">Comprar ahora</a>
-            <a class="btn btn-outline-light btn-lg px-4" routerLink="/cart">Ver carrito</a>
+        <!-- Left: Title + search -->
+        <div class="col-12 col-lg-7">
+          <h1 class="display-6 fw-bold mb-3">Encuentra tu llanta ideal</h1>
+          <p class="text-muted mb-3">Busca por palabra clave o filtra por marca, año y precio.</p>
+
+          <div class="search-panel">
+            <div class="row g-2">
+              <div class="col-12">
+                <input #kw class="form-control form-control-lg" placeholder="Buscar (marca, modelo o SKU)"/>
+              </div>
+              <div class="col-6 col-md-4">
+                <select class="form-select" [(ngModel)]="filters.brand">
+                  <option [ngValue]="undefined" selected>Marca</option>
+                  <option *ngFor="let b of brands" [value]="b">{{b}}</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-4">
+                <select class="form-select" [(ngModel)]="filters.year">
+                  <option [ngValue]="undefined" selected>Año</option>
+                  <option *ngFor="let y of years" [value]="y">{{y}}</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-4">
+                <select class="form-select" [(ngModel)]="filters.price">
+                  <option [ngValue]="undefined" selected>Precio</option>
+                  <option value="-5000">Hasta $5,000</option>
+                  <option value="5000-10000">$5,000–$10,000</option>
+                  <option value="10000+">$10,000 o más</option>
+                </select>
+              </div>
+              <div class="col-12 d-grid">
+                <button class="btn btn-dark btn-lg" (click)="submitSearch(kw.value)">Buscar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-2 mt-3">
+            <div class="col-4">
+              <div class="pill">20%<small>OFF</small></div>
+            </div>
+            <div class="col-4">
+              <div class="pill">Envío<small>Gratis</small></div>
+            </div>
+            <div class="col-4">
+              <div class="pill">6 MSI<small>Financiamiento</small></div>
+            </div>
           </div>
         </div>
-        <div class="col-lg-5 text-center">
-          <img src="/assets/pzero-1_80.jpg" alt="llanta" class="img-fluid border rounded-3 bg-body"/>
+
+        <!-- Right: hero image -->
+        <div class="col-12 col-lg-5 text-center">
+          <img src="/assets/pzero-1_80.jpg" alt="llanta" class="hero-img border rounded-3 bg-body"/>
         </div>
       </div>
     </div>
@@ -147,7 +173,7 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     </div>
   </section>
 
-  <!-- Value props -->
+  <!-- Value props (secondary strip) -->
   <section class="container mb-4">
     <div class="row g-3 text-center">
       <div class="col-12 col-md-4">
@@ -171,10 +197,10 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     </div>
   </section>
 
-  <!-- Featured products -->
+  <!-- Popular tires -->
   <section class="container mb-5">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
-      <h2 class="h4 m-0">Destacados</h2>
+      <h2 class="h4 m-0 section-title">Llantas populares</h2>
       <div class="d-flex align-items-center gap-2 w-100 w-lg-auto">
         <input #q class="form-control" placeholder="Buscar marca, modelo o SKU" (input)="onSearch(q.value)"/>
         <button class="btn btn-outline-secondary" (click)="onSearch('')">Limpiar</button>
@@ -429,6 +455,11 @@ export class LandingPage {
   rims = [13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
   size: { width?: number; aspect?: number; rim?: number } = {};
 
+  // Landing hero filters (for UX; concatenated into a query string)
+  brands = ['Pirelli', 'Michelin', 'Bridgestone', 'Goodyear', 'Continental'];
+  years = Array.from({ length: 26 }, (_, i) => 2000 + i);
+  filters: { brand?: string; year?: number; price?: string } = {};
+
   onSearch(q: string) {
     this.products$ = this.api.getProducts(q?.trim() || undefined);
   }
@@ -449,6 +480,16 @@ export class LandingPage {
     } else {
       this.router.navigate(['/shop']);
     }
+  }
+
+  submitSearch(keyword: string) {
+    const parts = [keyword?.trim()]
+      .concat(this.filters.brand ? [this.filters.brand] : [])
+      .concat(this.filters.year ? [String(this.filters.year)] : [])
+      .concat(this.filters.price ? [this.filters.price] : [])
+      .filter(Boolean) as string[];
+    const q = parts.join(' ');
+    this.goToShop(q);
   }
 
   applyCoupon(code: string) {
