@@ -12,7 +12,7 @@ import { CartStore } from '../../state/cart.store';
   <section class="container my-4" *ngIf="product; else loading">
     <div class="row g-4">
       <div class="col-md-5">
-        <img src="/assets/tyre.png" class="img-fluid border rounded" alt="llanta" />
+        <img src="/assets/pzero-1_80.jpg" class="img-fluid border rounded" alt="llanta" />
       </div>
       <div class="col-md-7">
         <h2 class="mb-1">{{ product.brand }} {{ product.modelName }}</h2>

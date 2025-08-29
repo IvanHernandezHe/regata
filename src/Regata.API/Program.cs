@@ -24,9 +24,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Serve SPA static files if present (wwwroot)
-app.UseDefaultFiles();
-app.UseStaticFiles();
+// Serve SPA static files only if wwwroot exists (avoid warnings in dev)
+if (System.IO.Directory.Exists(app.Environment.WebRootPath))
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
 
 app.MapControllers();
 app.MapGroup("/api/auth").MapIdentityApi<Microsoft.AspNetCore.Identity.IdentityUser<Guid>>();
@@ -39,6 +42,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Client-side routing fallback to index.html (if file exists)
-app.MapFallbackToFile("index.html");
+if (System.IO.Directory.Exists(app.Environment.WebRootPath))
+{
+    app.MapFallbackToFile("index.html");
+}
 
 app.Run();

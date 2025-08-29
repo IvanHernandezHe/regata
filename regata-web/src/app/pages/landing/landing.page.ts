@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { NgFor, NgIf, AsyncPipe, SlicePipe, CurrencyPipe } from '@angular/common';
+import { NgFor, NgIf, AsyncPipe, SlicePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
+import { Product } from '../../core/models/product.model';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
 
 @Component({
   standalone: true,
-  imports: [RouterLink, NgFor, NgIf, AsyncPipe, SlicePipe, CurrencyPipe, ProductCardComponent],
+  imports: [RouterLink, NgFor, NgIf, AsyncPipe, SlicePipe, ProductCardComponent],
   styles: [`
     .hero {
       position: relative;
@@ -48,7 +49,7 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
           </div>
         </div>
         <div class="col-lg-5 text-center">
-          <img src="/assets/tyre.png" alt="llanta" class="img-fluid border rounded-3 bg-body"/>
+          <img src="/assets/pzero-1_80.jpg" alt="llanta" class="img-fluid border rounded-3 bg-body"/>
         </div>
       </div>
     </div>
@@ -80,12 +81,16 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
 
   <!-- Featured products -->
   <section class="container mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 mb-3">
       <h2 class="h4 m-0">Destacados</h2>
-      <a class="btn btn-sm btn-outline-dark" routerLink="/shop">Ver todo</a>
+      <div class="d-flex align-items-center gap-2 w-100 w-lg-auto">
+        <input #q class="form-control" placeholder="Buscar marca, modelo o SKU" (input)="onSearch(q.value)"/>
+        <button class="btn btn-outline-secondary" (click)="onSearch('')">Limpiar</button>
+        <a class="btn btn-sm btn-outline-dark" routerLink="/shop">Ver todo</a>
+      </div>
     </div>
     <div class="row g-3">
-      <div class="col-12 col-sm-6 col-lg-4" *ngFor="let p of (products$ | async) | slice:0:6">
+      <div class="col-12 col-sm-6 col-lg-4" *ngFor="let p of (products$ | async) | slice:0:6; trackBy: trackById">
         <app-product-card [product]="p"></app-product-card>
       </div>
       <div class="col-12" *ngIf="(products$ | async)?.length === 0">
@@ -138,4 +143,10 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
 export class LandingPage {
   private api = inject(ApiService);
   products$ = this.api.getProducts();
+
+  onSearch(q: string) {
+    this.products$ = this.api.getProducts(q?.trim() || undefined);
+  }
+
+  trackById(_: number, p: Product) { return p.id; }
 }

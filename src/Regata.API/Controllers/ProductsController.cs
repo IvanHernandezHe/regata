@@ -2,6 +2,7 @@ using Regata.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Regata.Domain.Products;
 
 namespace Regata.API.Controllers;
 
@@ -21,5 +22,14 @@ public class ProductsController : ControllerBase
             query = query.Where(p => p.Brand.Contains(q) || p.ModelName.Contains(q) || p.Sku.Contains(q));
         var items = await query.OrderBy(p => p.Brand).Take(50).ToListAsync();
         return Ok(items);
+    }
+
+    [HttpGet("{id}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<Product>> GetById([FromRoute] Guid id)
+    {
+        var item = await _db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id && p.Active);
+        if (item is null) return NotFound();
+        return Ok(item);
     }
 }
