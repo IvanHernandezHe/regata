@@ -39,18 +39,21 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     .pill small { display: block; font-weight: 400; color: #6c757d; }
     .section-title { font-weight: 700; }
 
-    /* Promo carousel (CSS-only auto-scroll) */
-    .promo-carousel { overflow: hidden; border-radius: .75rem; }
-    .promo-track { display: flex; width: max-content; animation: promo-scroll 24s linear infinite; }
-    .promo-item { position: relative; min-width: 100%; }
-    .promo-item img { width: 100%; height: 320px; object-fit: cover; display: block; }
-    .promo-caption { position: absolute; inset: auto 0 0 0; padding: 1rem 1.25rem; color: #fff; background: linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,0)); }
-    @keyframes promo-scroll {
+    /* Simple image carousel (no text, auto-slide) */
+    /* Responsive height: smaller on mobile to keep panoramic proportion */
+    .simple-carousel { overflow: hidden; border-radius: 0; height: 40vh; max-height: 420px; }
+    .simple-track { display: flex; width: max-content; height: 100%; animation: simple-scroll 20s linear infinite; }
+    .simple-item { min-width: 100%; height: 100%; }
+    .simple-item img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+    @media (min-width: 576px) { .simple-carousel { height: 50vh; max-height: 520px; } }
+    @media (min-width: 768px) { .simple-carousel { height: 60vh; max-height: 600px; } }
+    @media (min-width: 992px) { .simple-carousel { height: 75vh; max-height: 720px; } }
+    @keyframes simple-scroll {
       0% { transform: translateX(0); }
-      33% { transform: translateX(0); }
-      40% { transform: translateX(-100%); }
-      73% { transform: translateX(-100%); }
-      80% { transform: translateX(-200%); }
+      30% { transform: translateX(0); }
+      35% { transform: translateX(-100%); }
+      65% { transform: translateX(-100%); }
+      70% { transform: translateX(-200%); }
       100% { transform: translateX(-200%); }
     }
 
@@ -83,6 +86,18 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     }
   `],
   template: `
+  <!-- Image carousel just below navbar -->
+  <section class="container-fluid p-0 m-0">
+    <div class="simple-carousel">
+      <div class="simple-track">
+        <div class="simple-item"><img src="/assets/main-header/slider1.jpg" alt="Promoción 1"></div>
+        <div class="simple-item"><img src="/assets/main-header/slider2.jpg" alt="Promoción 2"></div>
+        <div class="simple-item"><img src="/assets/main-header/slider3.jpg" alt="Promoción 3"></div>
+        <div class="simple-item"><img src="/assets/main-header/slider4.jpg" alt="Promoción 4"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- Hero with search panel -->
   <header class="hero py-4 py-lg-5 mb-4">
     <div class="container">
@@ -144,34 +159,7 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     </div>
   </header>
 
-  <!-- Promo carousel -->
-  <section class="container mb-4">
-    <div class="promo-carousel border">
-      <div class="promo-track">
-        <div class="promo-item">
-          <img src="https://dummyimage.com/1200x320/222/ffffff&text=4x3+en+marcas+selectas" alt="Promoción 4x3 en marcas selectas"/>
-          <div class="promo-caption">
-            <div class="h5 m-0">4x3 en marcas selectas</div>
-            <small>Aprovecha hasta agotar existencias</small>
-          </div>
-        </div>
-        <div class="promo-item">
-          <img src="https://dummyimage.com/1200x320/1a1a1a/ffffff&text=Cashback+en+tu+primera+compra" alt="Cashback en tu primera compra"/>
-          <div class="promo-caption">
-            <div class="h5 m-0">Cashback en tu primera compra</div>
-            <small>Regístrate y recibe saldo</small>
-          </div>
-        </div>
-        <div class="promo-item">
-          <img src="https://dummyimage.com/1200x320/2a2a2a/ffffff&text=Instalaci%C3%B3n+a+domicilio" alt="Instalación a domicilio"/>
-          <div class="promo-caption">
-            <div class="h5 m-0">Instalación a domicilio</div>
-            <small>Agenda en el horario que prefieras</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+  
 
   <!-- Value props (secondary strip) -->
   <section class="container mb-4">
