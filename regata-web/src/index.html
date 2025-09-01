@@ -6,6 +6,15 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        var theme = saved === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-bs-theme', theme);
+      } catch (e) { /* no-op */ }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>
