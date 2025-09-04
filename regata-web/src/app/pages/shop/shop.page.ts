@@ -33,7 +33,7 @@ export class ShopPage {
   products$ = this.api.getProducts();
   currentQuery = '';
   add(p: Product) { this.cart.add(p); }
-  onSearch(q: string) { this.products$ = this.api.getProducts(q?.trim() || undefined); }
+  onSearch(q: string) { const t = (q || '').trim(); this.products$ = this.api.getProducts(t || undefined); }
   trackById(_: number, p: Product) { return p.id; }
 
   constructor() {

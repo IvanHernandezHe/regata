@@ -38,6 +38,10 @@ export class CartStore {
   remove(id: string) { this.#items.update(list => list.filter(i => i.productId !== id)); }
   clear() { this.#items.set([]); }
 
+  replaceFromServer(items: CartItem[]) {
+    this.#items.set(items);
+  }
+
   increment(id: string, by = 1) {
     if (by <= 0) return;
     this.#items.update(list => list.map(i => i.productId === id ? { ...i, qty: i.qty + by } : i));

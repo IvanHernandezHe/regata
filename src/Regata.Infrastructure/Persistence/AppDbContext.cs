@@ -1,6 +1,7 @@
 using Regata.Domain.Products;
 using Regata.Domain.Orders;
 using Regata.Domain.Marketing;
+using Regata.Domain.Carts;
 using Regata.Domain.Rewards;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -36,6 +37,8 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
     public DbSet<DiscountCode> DiscountCodes => Set<DiscountCode>();
     public DbSet<RewardAccount> RewardAccounts => Set<RewardAccount>();
     public DbSet<RewardTransaction> RewardTransactions => Set<RewardTransaction>();
+    public DbSet<Cart> Carts => Set<Cart>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -57,6 +60,20 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
         b.Entity<DiscountCode>(e =>
         {
             e.HasIndex(x => x.Code).IsUnique();
+        });
+        b.Entity<Cart>(e =>
+        {
+            e.HasKey(c => c.Id);
+            e.HasIndex(c => c.UserId);
+        });
+        b.Entity<CartItem>(e =>
+        {
+            e.HasKey(i => i.Id);
+            e.Property(i => i.UnitPrice).HasPrecision(18,2);
+            e.HasOne<Cart>()
+                .WithMany(c => c.Items)
+                .HasForeignKey(i => i.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -9,7 +9,7 @@ import { DOCUMENT } from '@angular/common';
   styles: [`
     footer { width: 100%; }
     .footer a { color: rgba(255,255,255,.85); text-decoration: none; }
-    .footer a:hover { color: #fff; text-decoration: underline; }
+    .footer a:hover { color: var(--jdm-red); text-decoration: underline; }
     .footer h6 { letter-spacing: .02em; }
     .muted { color: rgba(255,255,255,.65); }
     .theme-toggle { align-items: center; display: flex; gap: .5rem; }

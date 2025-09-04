@@ -1,7 +1,7 @@
 import { ApplicationConfig, importProvidersFrom, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { LucideAngularModule, ShoppingCart, User, Search, X } from 'lucide-angular';
 
 
@@ -12,7 +12,16 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withFetch()),
+    provideHttpClient(
+      withInterceptors([
+        (req: HttpRequest<unknown>, next) => {
+          if (req.url.startsWith('/api')) {
+            req = req.clone({ withCredentials: true });
+          }
+          return next(req);
+        }
+      ])
+    ),
     importProvidersFrom(LucideAngularModule.pick({ ShoppingCart, User, Search, X })),
   ]
 };

@@ -104,7 +104,7 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
       <div class="row align-items-center g-4">
         <!-- Left: Title + search -->
         <div class="col-12 col-lg-7">
-          <h1 class="display-6 fw-bold mb-3">Encuentra tu llanta ideal</h1>
+          <h1 class="display-6 fw-bold mb-3 drift-in">Encuentra tu llanta ideal</h1>
           <p class="text-muted mb-3">Busca por palabra clave o filtra por marca, año y precio.</p>
 
           <div class="search-panel">
@@ -133,27 +133,27 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
                 </select>
               </div>
               <div class="col-12 d-grid">
-                <button class="btn btn-dark btn-lg" (click)="submitSearch(kw.value)">Buscar</button>
+                <button class="btn btn-jdm btn-lg" (click)="submitSearch(kw.value)">Buscar</button>
               </div>
             </div>
           </div>
 
           <div class="row g-2 mt-3">
             <div class="col-4">
-              <div class="pill">20%<small>OFF</small></div>
+              <div class="pill sticker-red">20%<small>OFF</small></div>
             </div>
             <div class="col-4">
-              <div class="pill">Envío<small>Gratis</small></div>
+              <div class="pill sticker">Envío<small>Gratis</small></div>
             </div>
             <div class="col-4">
-              <div class="pill">6 MSI<small>Financiamiento</small></div>
+              <div class="pill sticker">6 MSI<small>Financiamiento</small></div>
             </div>
           </div>
         </div>
 
         <!-- Right: hero image -->
-        <div class="col-12 col-lg-5 text-center">
-          <img src="/assets/pzero-1_80.jpg" alt="llanta" class="hero-img border rounded-3 bg-body"/>
+        <div class="col-12 col-lg-5 text-center d-flex flex-column gap-3">
+          <img src="/assets/pzero-1_80.jpg" alt="llanta" class="hero-img border rounded-3 bg-body align-self-center"/>
         </div>
       </div>
     </div>
@@ -449,7 +449,8 @@ export class LandingPage {
   filters: { brand?: string; year?: number; price?: string } = {};
 
   onSearch(q: string) {
-    this.products$ = this.api.getProducts(q?.trim() || undefined);
+    const t = (q || '').trim();
+    this.products$ = this.api.getProducts(t || undefined);
   }
 
   trackById(_: number, p: Product) { return p.id; }
@@ -471,7 +472,7 @@ export class LandingPage {
   }
 
   submitSearch(keyword: string) {
-    const parts = [keyword?.trim()]
+    const parts = [(keyword || '').trim()]
       .concat(this.filters.brand ? [this.filters.brand] : [])
       .concat(this.filters.year ? [String(this.filters.year)] : [])
       .concat(this.filters.price ? [this.filters.price] : [])
@@ -481,7 +482,8 @@ export class LandingPage {
   }
 
   applyCoupon(code: string) {
-    if (!code?.trim()) return;
-    alert(`Cupón "${code.trim()}" se aplicará en el checkout.`);
+    const t = (code || '').trim();
+    if (!t) return;
+    alert(`Cupón "${t}" se aplicará en el checkout.`);
   }
 }

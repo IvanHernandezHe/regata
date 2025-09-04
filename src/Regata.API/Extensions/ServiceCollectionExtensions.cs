@@ -1,6 +1,10 @@
 using Regata.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Authentication.BearerToken;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Regata.API.Extensions;
 
@@ -25,6 +29,9 @@ public static class ServiceCollectionExtensions
             .AddIdentityApiEndpoints<IdentityUser<Guid>>()
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
+
+        services.AddAuthentication();
+        services.AddAuthorization();
 
         return services;
     }

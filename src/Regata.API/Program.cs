@@ -12,7 +12,8 @@ builder.Services.AddCors(o =>
     o.AddDefaultPolicy(p => p
         .AllowAnyHeader()
         .AllowAnyMethod()
-        .WithOrigins("http://localhost:4200"));
+        .WithOrigins("http://localhost:4200")
+        .AllowCredentials());
 });
 
 var app = builder.Build();
@@ -30,6 +31,9 @@ if (System.IO.Directory.Exists(app.Environment.WebRootPath))
     app.UseDefaultFiles();
     app.UseStaticFiles();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapGroup("/api/auth").MapIdentityApi<Microsoft.AspNetCore.Identity.IdentityUser<Guid>>();
