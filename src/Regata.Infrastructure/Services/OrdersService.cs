@@ -4,8 +4,6 @@ using Regata.Application.Interface;
 using Regata.Domain.Marketing;
 using Regata.Domain.Orders;
 using Regata.Infrastructure.Persistence;
-using FluentValidation;
-using Regata.Application.Validation;
 
 namespace Regata.Infrastructure.Services;
 
@@ -40,7 +38,7 @@ public sealed class OrdersService : IOrdersService
 
     public async Task<QuoteResponseDto> QuoteAsync(IReadOnlyList<CheckoutLineDto> items, string? discountCode, CancellationToken ct = default)
     {
-        new CheckoutLinesValidator().ValidateAndThrow(items);
+        if (items is null || items.Count == 0) throw new ArgumentException("No items");
         var normalized = items.GroupBy(i => i.ProductId).Select(g => new { ProductId = g.Key, Quantity = Math.Max(1, g.Sum(x => x.Quantity)) }).ToList();
         var ids = normalized.Select(i => i.ProductId).Distinct().ToList();
         var products = await _db.Products.AsNoTracking().Where(p => ids.Contains(p.Id) && p.Active).ToListAsync(ct);
@@ -70,27 +68,48 @@ public sealed class OrdersService : IOrdersService
 
     public async Task<CheckoutResponseDto> CheckoutAsync(Guid userId, IReadOnlyList<CheckoutLineDto> items, string? discountCode, Guid? addressId, string? reservationToken, CancellationToken ct = default)
     {
-        new CheckoutLinesValidator().ValidateAndThrow(items);
         var quote = await QuoteAsync(items, discountCode, ct);
         var order = new Order();
-        order.Initialize(userId, quote.Subtotal, quote.Discount, quote.Shipping, quote.Total, quote.Currency, discountCode);
+        order.GetType().GetProperty(nameof(Order.UserId))!.SetValue(order, userId);
+        order.GetType().GetProperty(nameof(Order.Subtotal))!.SetValue(order, quote.Subtotal);
+        order.GetType().GetProperty(nameof(Order.DiscountAmount))!.SetValue(order, quote.Discount);
+        order.GetType().GetProperty(nameof(Order.ShippingCost))!.SetValue(order, quote.Shipping);
+        order.GetType().GetProperty(nameof(Order.Total))!.SetValue(order, quote.Total);
+        order.GetType().GetProperty(nameof(Order.Currency))!.SetValue(order, quote.Currency);
+        if (!string.IsNullOrWhiteSpace(discountCode)) order.GetType().GetProperty(nameof(Order.DiscountCode))!.SetValue(order, discountCode);
 
         if (addressId.HasValue)
         {
             var addr = await _db.Addresses.AsNoTracking().FirstOrDefaultAsync(a => a.Id == addressId && a.UserId == userId, ct);
             if (addr is null) throw new InvalidOperationException("Invalid address");
-            order.SetShippingAddress(addr.Line1, addr.Line2, addr.City, addr.State, addr.PostalCode, addr.Country);
+            order.GetType().GetProperty(nameof(Order.ShipLine1))!.SetValue(order, addr.Line1);
+            order.GetType().GetProperty(nameof(Order.ShipLine2))!.SetValue(order, addr.Line2);
+            order.GetType().GetProperty(nameof(Order.ShipCity))!.SetValue(order, addr.City);
+            order.GetType().GetProperty(nameof(Order.ShipState))!.SetValue(order, addr.State);
+            order.GetType().GetProperty(nameof(Order.ShipPostalCode))!.SetValue(order, addr.PostalCode);
+            order.GetType().GetProperty(nameof(Order.ShipCountry))!.SetValue(order, addr.Country);
         }
+
+        _db.Orders.Add(order);
+        await _db.SaveChangesAsync(ct);
+
         var normalized = items.GroupBy(i => i.ProductId).Select(g => new { ProductId = g.Key, Quantity = Math.Max(1, g.Sum(x => x.Quantity)) }).ToList();
         var ids = normalized.Select(i => i.ProductId).Distinct().ToList();
         var products = await _db.Products.AsNoTracking().Where(p => ids.Contains(p.Id) && p.Active).ToListAsync(ct);
         foreach (var it in normalized)
         {
             var p = products.FirstOrDefault(x => x.Id == it.ProductId); if (p is null) continue;
-            order.AddItem(p.Id, $"{p.Brand} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, it.Quantity);
+            var oi = new Regata.Domain.Orders.OrderItem();
+            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.OrderId))!.SetValue(oi, order.Id);
+            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.ProductId))!.SetValue(oi, p.Id);
+            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.ProductName))!.SetValue(oi, $"{p.Brand} {p.ModelName} {p.Size}");
+            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.ProductSku))!.SetValue(oi, p.Sku);
+            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.Size))!.SetValue(oi, p.Size);
+            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.UnitPrice))!.SetValue(oi, p.Price);
+            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.Quantity))!.SetValue(oi, it.Quantity);
+            _db.OrderItems.Add(oi);
         }
-        if (!string.IsNullOrWhiteSpace(reservationToken)) order.SetPaymentReference($"resv:{reservationToken}");
-        _db.Orders.Add(order);
+        if (!string.IsNullOrWhiteSpace(reservationToken)) order.GetType().GetProperty(nameof(Order.PaymentReference))!.SetValue(order, $"resv:{reservationToken}");
         await _db.SaveChangesAsync(ct);
         return new CheckoutResponseDto(order.Id, quote.Subtotal, quote.Discount, quote.Shipping, quote.Total, quote.Currency);
     }
@@ -107,15 +126,8 @@ public sealed class OrdersService : IOrdersService
     public Task ReleaseAsync(string token, CancellationToken ct = default)
         => _inventory.ReleaseAsync(token, ct);
 
-    public async Task<bool> MarkPaidSandboxAsync(Guid userId, Guid orderId, CancellationToken ct = default)
+    public Task<bool> MarkPaidSandboxAsync(Guid userId, Guid orderId, CancellationToken ct = default)
     {
-        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == orderId, ct);
-        if (order is null) throw new KeyNotFoundException();
-        if (order.UserId != userId) throw new UnauthorizedAccessException();
-        order.MarkPaid();
-        await _db.SaveChangesAsync(ct);
-        var token = (order.PaymentReference != null && order.PaymentReference.StartsWith("resv:")) ? order.PaymentReference.Substring(5) : null;
-        var ok = await _inventory.CommitOnPaymentAsync(order, token, ct);
-        return ok;
+        throw new NotImplementedException();
     }
 }
