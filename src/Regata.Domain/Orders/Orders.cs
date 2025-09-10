@@ -21,6 +21,52 @@ public sealed class Order
     public int PointsEarned { get; private set; }
     public int PointsSpent { get; private set; }
     public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    // Shipping snapshot (MVP)
+    public string? ShipLine1 { get; private set; }
+    public string? ShipLine2 { get; private set; }
+    public string? ShipCity { get; private set; }
+    public string? ShipState { get; private set; }
+    public string? ShipPostalCode { get; private set; }
+    public string? ShipCountry { get; private set; }
+    public decimal ShippingCost { get; private set; }
+
+    // Domain behaviors
+    public void Initialize(Guid userId, decimal subtotal, decimal discountAmount, decimal shippingCost, decimal total, string currency, string? discountCode = null)
+    {
+        if (userId == Guid.Empty) throw new ArgumentException("userId");
+        if (subtotal < 0 || discountAmount < 0 || shippingCost < 0 || total < 0) throw new ArgumentException("Amounts must be positive");
+        UserId = userId;
+        Subtotal = subtotal;
+        DiscountAmount = discountAmount;
+        ShippingCost = shippingCost;
+        Total = total;
+        Currency = string.IsNullOrWhiteSpace(currency) ? "MXN" : currency;
+        if (!string.IsNullOrWhiteSpace(discountCode)) DiscountCode = discountCode;
+        PaymentProvider = PaymentProvider.None;
+        PaymentStatus = PaymentStatus.Pending;
+        Status = OrderStatus.Created;
+    }
+
+    public void SetShippingAddress(string line1, string? line2, string city, string state, string postalCode, string country)
+    {
+        ShipLine1 = line1; ShipLine2 = line2; ShipCity = city; ShipState = state; ShipPostalCode = postalCode; ShipCountry = country;
+    }
+
+    public void AddItem(Guid productId, string productName, string sku, string size, decimal unitPrice, int quantity)
+    {
+        if (productId == Guid.Empty) throw new ArgumentException("productId");
+        if (quantity < 1) throw new ArgumentException("quantity");
+        Items.Add(new OrderItem(Id, productId, productName, sku, size, unitPrice, quantity));
+    }
+
+    public void SetPaymentReference(string reference) { PaymentReference = reference; }
+    public void SetStatus(OrderStatus status) { Status = status; }
+    public void SetPaymentStatus(PaymentStatus status) { PaymentStatus = status; }
+    public void MarkPaid()
+    {
+        PaymentStatus = PaymentStatus.Succeeded;
+        Status = OrderStatus.Paid;
+    }
 }
 
 public sealed class OrderItem
@@ -34,4 +80,10 @@ public sealed class OrderItem
     public decimal UnitPrice { get; private set; }
     public int Quantity { get; private set; }
     public decimal LineTotal => UnitPrice * Quantity;
+
+    public OrderItem() { }
+    public OrderItem(Guid orderId, Guid productId, string productName, string productSku, string size, decimal unitPrice, int quantity)
+    {
+        OrderId = orderId; ProductId = productId; ProductName = productName; ProductSku = productSku; Size = size; UnitPrice = unitPrice; Quantity = quantity;
+    }
 }

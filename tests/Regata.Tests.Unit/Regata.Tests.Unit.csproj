@@ -21,6 +21,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Regata.Domain\Regata.Domain.csproj" />
     <ProjectReference Include="..\..\src\Regata.Application\Regata.Application.csproj" />
+    <ProjectReference Include="..\..\src\Regata.Infrastructure\Regata.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.8" />
   </ItemGroup>
 
 </Project>

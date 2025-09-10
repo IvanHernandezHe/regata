@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authorization;
 using Regata.Application.Interface;
+using Regata.Infrastructure.Services;
 using Regata.Infrastructure.Logging;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Regata.Application.Interface;
 using Regata.Infrastructure.Inventory;
 
 namespace Regata.API.Extensions;
@@ -45,6 +45,13 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<IAuditLogger, AuditLogger>();
         services.AddScoped<IInventoryService, InventoryService>();
+        services.AddScoped<ICartService, CartService>();
+        services.AddScoped<IProductQueryService, ProductQueryService>();
+        services.AddScoped<IAddressService, AddressService>();
+        services.AddScoped<IDiscountsService, DiscountsService>();
+        services.AddScoped<IOrdersService, OrdersService>();
+        services.AddScoped<IAuditQueryService, AuditQueryService>();
+        services.AddScoped<IInventoryAdminService, InventoryAdminService>();
 
         var authBuilder = services.AddAuthentication();
         var gid = cfg["Authentication:Google:ClientId"];
@@ -93,6 +100,7 @@ public static class ServiceCollectionExtensions
                 }
             };
         });
+        services.AddScoped<IOrderAdminService, OrderAdminService>();
         services.AddAuthorization();
 
         return services;

@@ -3,6 +3,7 @@ using Regata.Domain.Orders;
 using Regata.Domain.Marketing;
 using Regata.Domain.Carts;
 using Regata.Domain.Rewards;
+using Regata.Domain.Accounts;
 using Regata.Domain.Wishlist;
 using Regata.Domain.Inventory;
 using Regata.Domain.Auditing;
@@ -42,6 +43,7 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
     public DbSet<RewardTransaction> RewardTransactions => Set<RewardTransaction>();
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Address> Addresses => Set<Address>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<WishlistItem> Wishlist => Set<WishlistItem>();
     public DbSet<InventoryItem> Inventory => Set<InventoryItem>();
@@ -68,6 +70,17 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
         b.Entity<DiscountCode>(e =>
         {
             e.HasIndex(x => x.Code).IsUnique();
+        });
+        b.Entity<Address>(e =>
+        {
+            e.HasKey(a => a.Id);
+            e.Property(a => a.Line1).HasMaxLength(200).IsRequired();
+            e.Property(a => a.Line2).HasMaxLength(200);
+            e.Property(a => a.City).HasMaxLength(100).IsRequired();
+            e.Property(a => a.State).HasMaxLength(100).IsRequired();
+            e.Property(a => a.PostalCode).HasMaxLength(20).IsRequired();
+            e.Property(a => a.Country).HasMaxLength(2).IsRequired();
+            e.HasIndex(a => new { a.UserId, a.IsDefault });
         });
         b.Entity<Cart>(e =>
         {

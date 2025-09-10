@@ -6,6 +6,7 @@ import { AuthStore } from '../../state/auth.store';
 import { ToastService } from '../../core/toast.service';
 import { CartStore } from '../../state/cart.store';
 import { RouterLink } from '@angular/router';
+import { CartService } from '../../core/cart.service';
 
 @Component({
   standalone: true,
@@ -91,6 +92,7 @@ export class CartPage implements OnInit {
   auth = inject(AuthStore);
   #wishlist = inject(WishlistService);
   #toast = inject(ToastService);
+  #cartApi = inject(CartService);
   coupon = '';
   saved: WishItem[] = [];
   remove(id: string) { this.cart.remove(id); }
@@ -105,7 +107,19 @@ export class CartPage implements OnInit {
   }
   applyCoupon() { this.cart.applyCoupon(this.coupon); }
   removeCoupon() { this.cart.clearCoupon(); }
-  ngOnInit() { if (this.auth.isAuthenticated()) this.loadSaved(); }
+  ngOnInit() {
+    if (this.auth.isAuthenticated()) this.loadSaved();
+    // Try hydrate from server if it has content (does not override local non-empty carts)
+    this.#cartApi.get().subscribe({
+      next: (res) => {
+        const local = this.cart.items();
+        if (res.items?.length && (local.length === 0 || this.cart.isServerSynced())) {
+          this.cart.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock })));
+        }
+      },
+      error: () => {}
+    });
+  }
   loadSaved() { this.#wishlist.list().subscribe({ next: (l) => (this.saved = l), error: () => (this.saved = []) }); }
   moveSavedToCart(w: WishItem) { this.#wishlist.moveToCart(w.productId, 1).subscribe({ next: () => { this.loadSaved(); this.cart.increment(w.productId, 1); }, error: () => {} }); }
   removeSaved(w: WishItem) { this.#wishlist.remove(w.productId).subscribe({ next: () => this.loadSaved(), error: () => {} }); }

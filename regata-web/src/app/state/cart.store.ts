@@ -56,7 +56,7 @@ export class CartStore {
   reload() {
     if (!this.#auth.isAuthenticated()) return;
     this.#api.get().subscribe({
-      next: (res) => this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty }))),
+      next: (res) => this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock }))),
       error: () => {}
     });
   }
@@ -65,7 +65,7 @@ export class CartStore {
     if (this.#auth.isAuthenticated()) {
       this.#api.add(p.id, qty).subscribe({
         next: (res) => {
-          this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty })));
+          this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock })));
           this.#toast.success('Producto agregado al carrito');
         },
         error: () => {
@@ -84,7 +84,7 @@ export class CartStore {
     if (this.#auth.isAuthenticated()) {
       this.#api.remove(id).subscribe({
         next: (res) => {
-          this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty })));
+          this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock })));
           if (removed) this.#toast.showWithAction('Producto quitado', 'Deshacer', () => this.#undoRemove(removed));
         },
         error: () => { this.#removeLocal(id); if (removed) this.#toast.showWithAction('Producto quitado', 'Deshacer', () => this.#undoRemove(removed)); }
@@ -221,7 +221,7 @@ export class CartStore {
     if (prev) clearTimeout(prev);
     const t = setTimeout(() => {
       this.#api.setQty(id, qty).subscribe({
-        next: (res) => this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty }))),
+        next: (res) => this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock }))),
         error: () => this.#toast.warning('No se pudo actualizar la cantidad')
       });
     }, 250);
