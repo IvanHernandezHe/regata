@@ -1744,7 +1744,6 @@
           "FluentValidation": "12.0.0",
           "Mapster": "7.4.0",
           "Mapster.DependencyInjection": "1.0.1",
-          "Regata.Contracts": "1.0.0",
           "Regata.Domain": "1.0.0"
         },
         "compile": {
@@ -1752,16 +1751,6 @@
         },
         "runtime": {
           "bin/placeholder/Regata.Application.dll": {}
-        }
-      },
-      "Regata.Contracts/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v9.0",
-        "compile": {
-          "bin/placeholder/Regata.Contracts.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/Regata.Contracts.dll": {}
         }
       },
       "Regata.Domain/1.0.0": {
@@ -4383,11 +4372,6 @@
       "type": "project",
       "path": "../../src/Regata.Application/Regata.Application.csproj",
       "msbuildProject": "../../src/Regata.Application/Regata.Application.csproj"
-    },
-    "Regata.Contracts/1.0.0": {
-      "type": "project",
-      "path": "../../src/Regata.Contracts/Regata.Contracts.csproj",
-      "msbuildProject": "../../src/Regata.Contracts/Regata.Contracts.csproj"
     },
     "Regata.Domain/1.0.0": {
       "type": "project",

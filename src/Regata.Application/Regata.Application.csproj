@@ -1,8 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Regata.Domain\Regata.Domain.csproj" />
-    <ProjectReference Include="..\Regata.Contracts\Regata.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

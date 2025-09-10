@@ -23,7 +23,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Regata.Application\Regata.Application.csproj" />
     <ProjectReference Include="..\Regata.Infrastructure\Regata.Infrastructure.csproj" />
-    <ProjectReference Include="..\Regata.Contracts\Regata.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

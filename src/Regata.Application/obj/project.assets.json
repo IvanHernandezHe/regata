@@ -65,16 +65,6 @@
           "buildTransitive/netcoreapp3.1/_._": {}
         }
       },
-      "Regata.Contracts/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v9.0",
-        "compile": {
-          "bin/placeholder/Regata.Contracts.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/Regata.Contracts.dll": {}
-        }
-      },
       "Regata.Domain/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
@@ -170,11 +160,6 @@
         "useSharedDesignerContext.txt"
       ]
     },
-    "Regata.Contracts/1.0.0": {
-      "type": "project",
-      "path": "../Regata.Contracts/Regata.Contracts.csproj",
-      "msbuildProject": "../Regata.Contracts/Regata.Contracts.csproj"
-    },
     "Regata.Domain/1.0.0": {
       "type": "project",
       "path": "../Regata.Domain/Regata.Domain.csproj",
@@ -186,7 +171,6 @@
       "FluentValidation >= 12.0.0",
       "Mapster >= 7.4.0",
       "Mapster.DependencyInjection >= 1.0.1",
-      "Regata.Contracts >= 1.0.0",
       "Regata.Domain >= 1.0.0"
     ]
   },
@@ -215,9 +199,6 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "/Users/ivanhernandez/Projects/Regata/src/Regata.Contracts/Regata.Contracts.csproj": {
-              "projectPath": "/Users/ivanhernandez/Projects/Regata/src/Regata.Contracts/Regata.Contracts.csproj"
-            },
             "/Users/ivanhernandez/Projects/Regata/src/Regata.Domain/Regata.Domain.csproj": {
               "projectPath": "/Users/ivanhernandez/Projects/Regata/src/Regata.Domain/Regata.Domain.csproj"
             }

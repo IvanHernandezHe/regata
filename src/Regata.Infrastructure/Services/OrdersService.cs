@@ -128,6 +128,27 @@ public sealed class OrdersService : IOrdersService
 
     public Task<bool> MarkPaidSandboxAsync(Guid userId, Guid orderId, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        return MarkPaidSandboxInternalAsync(userId, orderId, ct);
+    }
+
+    private async Task<bool> MarkPaidSandboxInternalAsync(Guid userId, Guid orderId, CancellationToken ct)
+    {
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == orderId, ct);
+        if (order is null) throw new KeyNotFoundException();
+        if (order.UserId != userId) throw new UnauthorizedAccessException();
+
+        if (order.PaymentStatus == PaymentStatus.Succeeded)
+            return true; // already paid
+
+        string? reservationToken = null;
+        if (!string.IsNullOrWhiteSpace(order.PaymentReference) && order.PaymentReference!.StartsWith("resv:", StringComparison.OrdinalIgnoreCase))
+            reservationToken = order.PaymentReference!.Substring(5);
+
+        var committed = await _inventory.CommitOnPaymentAsync(order, reservationToken, ct);
+        if (!committed) return false; // not enough inventory
+
+        order.MarkPaid();
+        await _db.SaveChangesAsync(ct);
+        return true;
     }
 }
