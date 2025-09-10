@@ -18,8 +18,9 @@ import { CartStore } from '../../state/cart.store';
         <h2 class="mb-1">{{ product.brand }} {{ product.modelName }}</h2>
         <p class="text-muted">Tamaño: {{ product.size }} · SKU {{ product.sku }}</p>
         <h3 class="my-3">{{ product.price | currency:'MXN' }}</h3>
-        <p *ngIf="product.stock > 0" class="text-success">En stock: {{ product.stock }}</p>
-        <p *ngIf="product.stock === 0" class="text-danger">Sin stock</p>
+        <p *ngIf="product.stock !== undefined" [class.text-success]="(product.stock||0) > 0" [class.text-danger]="(product.stock||0) === 0">
+          {{ (product.stock||0) > 0 ? ('En stock: ' + product.stock) : 'Sin stock' }}
+        </p>
 
         <div class="d-flex gap-2">
           <button class="btn btn-dark" (click)="addToCart()">Agregar al carrito</button>

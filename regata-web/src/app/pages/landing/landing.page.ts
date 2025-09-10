@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgFor, NgIf, AsyncPipe, SlicePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
@@ -41,21 +41,28 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
 
     /* Simple image carousel (no text, auto-slide) */
     /* Responsive height: smaller on mobile to keep panoramic proportion */
-    .simple-carousel { overflow: hidden; border-radius: 0; height: 40vh; max-height: 420px; }
-    .simple-track { display: flex; width: max-content; height: 100%; animation: simple-scroll 20s linear infinite; }
-    .simple-item { min-width: 100%; height: 100%; }
-    .simple-item img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+    .simple-carousel {
+      position: relative; overflow: hidden; border-radius: 0; height: 40vh; max-height: 420px;
+      contain: layout paint; isolation: isolate; overscroll-behavior: contain; /* evita desbordes visuales */
+      overflow-x: clip; /* recorte duro en navegadores modernos */
+      overflow-clip-margin: content-box;
+    }
+    .simple-track {
+      display: flex; width: 100%; height: 100%; transform: translate3d(0,0,0);
+      transition: transform 600ms ease; will-change: transform; backface-visibility: hidden;
+      margin: 0; padding: 0; gap: 0;
+    }
+    .simple-item { flex: 0 0 100%; height: 100%; backface-visibility: hidden; }
+    .simple-item img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transform: translateZ(0); clip-path: inset(0); }
+    .simple-progress { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; gap: 6px; z-index: 2; }
+    .simple-progress .bar { flex: 1; height: 3px; background: rgba(255,255,255,.35); border-radius: 999px; overflow: hidden; }
+    .simple-progress .fill { display: block; height: 100%; background: #fff; width: 0%; transition: width 120ms linear; }
+    .simple-carousel[data-paused="true"] .simple-progress .fill { background: rgba(255,255,255,.7); }
+    .simple-carousel[data-paused="true"] { cursor: pointer; }
     @media (min-width: 576px) { .simple-carousel { height: 50vh; max-height: 520px; } }
     @media (min-width: 768px) { .simple-carousel { height: 60vh; max-height: 600px; } }
     @media (min-width: 992px) { .simple-carousel { height: 75vh; max-height: 720px; } }
-    @keyframes simple-scroll {
-      0% { transform: translateX(0); }
-      30% { transform: translateX(0); }
-      35% { transform: translateX(-100%); }
-      65% { transform: translateX(-100%); }
-      70% { transform: translateX(-200%); }
-      100% { transform: translateX(-200%); }
-    }
+    /* Removed keyframes-based scroll to avoid left-edge flicker on loop */
 
     /* Generic boxes */
     .feature { border-radius: .75rem; border: 1px solid rgba(0,0,0,.08); background: #fff; }
@@ -84,16 +91,33 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     @media (min-width: 992px) {
       .search-panel { padding: 1.25rem 1.5rem; }
     }
+
+    /* Dark theme adaptations */
+    :host-context([data-bs-theme="dark"]) .hero { background: linear-gradient(180deg, #141414, #0e0e0e); }
+    :host-context([data-bs-theme="dark"]) .search-panel { background: #111; border-color: #2a2a2a; box-shadow: 0 8px 28px rgba(0,0,0,.5); }
+    :host-context([data-bs-theme="dark"]) .pill { background: #121212; border-color: #2a2a2a; color: #e6e6e6; }
+    :host-context([data-bs-theme="dark"]) .feature { background: #111; border-color: #2a2a2a; }
+    :host-context([data-bs-theme="dark"]) .category-tile { background: #141414; border-color: #2a2a2a; }
+    :host-context([data-bs-theme="dark"]) .service-card { background: #111; border-color: #2a2a2a; }
+    :host-context([data-bs-theme="dark"]) .coupon-card { background: #111; border-color: #2a2a2a; }
+    :host-context([data-bs-theme="dark"]) .info-split { background: #111; border-color: #2a2a2a; }
+    :host-context([data-bs-theme="dark"]) .simple-progress .bar { background: rgba(0,0,0,.35); }
+    :host-context([data-bs-theme="dark"]) .simple-progress .fill { background: rgba(255,255,255,.9); }
   `],
   template: `
   <!-- Image carousel just below navbar -->
   <section class="container-fluid p-0 m-0">
-    <div class="simple-carousel">
-      <div class="simple-track">
-        <div class="simple-item"><img src="/assets/main-header/slider1.jpg" alt="Promoción 1"></div>
-        <div class="simple-item"><img src="/assets/main-header/slider2.jpg" alt="Promoción 2"></div>
-        <div class="simple-item"><img src="/assets/main-header/slider3.jpg" alt="Promoción 3"></div>
-        <div class="simple-item"><img src="/assets/main-header/slider4.jpg" alt="Promoción 4"></div>
+    <div class="simple-carousel" [attr.data-paused]="paused" (pointerenter)="pause()" (pointerleave)="resume()" (pointerdown)="pause()" (pointerup)="resume()" (pointercancel)="resume()">
+      <div class="simple-track" [style.transform]="'translate3d(-' + (currentSlide * 100) + '%,0,0)'"><!--
+        -->
+        <div class="simple-item" *ngFor="let s of slides; trackBy: trackByIndex">
+          <img [src]="s.src" [alt]="s.alt">
+        </div>
+      </div>
+      <div class="simple-progress" aria-hidden="true">
+        <div class="bar" *ngFor="let s of slides; let i = index">
+          <span class="fill" [style.width]="barWidth(i)"></span>
+        </div>
       </div>
     </div>
   </section>
@@ -431,12 +455,70 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
   </div>
   `
 })
-export class LandingPage {
+export class LandingPage implements OnDestroy {
   private api = inject(ApiService);
   private router = inject(Router);
   products$ = this.api.getProducts();
   readonly waNumber = '5215555555555';
   readonly waLink = `https://wa.me/${this.waNumber}?text=${encodeURIComponent('Hola, quiero una cotización de llantas')}`;
+
+  // Carousel state
+  slides = [
+    { src: '/assets/main-header/slider1.jpg', alt: 'Promoción 1' },
+    { src: '/assets/main-header/slider2.jpg', alt: 'Promoción 2' },
+    { src: '/assets/main-header/slider3.jpg', alt: 'Promoción 3' },
+    { src: '/assets/main-header/slider4.jpg', alt: 'Promoción 4' },
+  ];
+  currentSlide = 0;
+  progressPct = 0; // 0..100
+  readonly slideDurationMs = 5000;
+  #timer: any = null;
+  paused = false;
+
+  constructor() {
+    this.#startTimer(true);
+  }
+
+  ngOnDestroy(): void { this.#stopTimer(); }
+
+  #startTimer(reset: boolean) {
+    this.#stopTimer();
+    const step = 100; // ms
+    if (reset) this.progressPct = 0;
+    this.#timer = setInterval(() => {
+      this.progressPct += (step / this.slideDurationMs) * 100;
+      if (this.progressPct >= 100) {
+        this.nextSlide();
+      }
+    }, step);
+  }
+
+  #stopTimer() { if (this.#timer) { clearInterval(this.#timer); this.#timer = null; } }
+
+  nextSlide() {
+    this.currentSlide = (this.currentSlide + 1) % this.slides.length;
+    this.progressPct = 0;
+  }
+
+  barWidth(i: number): string {
+    if (i < this.currentSlide) return '100%';
+    if (i > this.currentSlide) return '0%';
+    return `${Math.min(100, Math.max(0, this.progressPct))}%`;
+  }
+  trackByIndex(i: number) { return i; }
+
+  // Pause/Resume controls
+  pause() {
+    if (this.paused) return;
+    this.paused = true;
+    this.#stopTimer();
+  }
+  resume() {
+    if (!this.paused) return;
+    this.paused = false;
+    this.#startTimer(false);
+  }
+  // tap-to-toggle could be implemented if desired, but pointerdown/up gives press-to-pause UX
 
   widths = [165, 175, 185, 195, 205, 215, 225, 235, 245, 255, 265, 275, 285, 295, 305, 315];
   aspects = [30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80];

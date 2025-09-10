@@ -1,0 +1,1 @@
+import{Q as n,Qb as o,ja as i}from"./chunk-BIY3REYI.js";var a=class t{#e=i(null);user=this.#e.asReadonly();isAuthenticated=o(()=>!!this.#e());setSession(e){this.#e.set(e.authenticated&&e.email?{email:e.email}:null)}clear(){this.#e.set(null)}static \u0275fac=function(s){return new(s||t)};static \u0275prov=n({token:t,factory:t.\u0275fac,providedIn:"root"})};export{a};

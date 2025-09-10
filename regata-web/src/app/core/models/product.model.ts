@@ -5,6 +5,6 @@ export interface Product {
   modelName: string;
   size: string;
   price: number;
-  stock: number;
+  stock?: number;
   active: boolean;
 }

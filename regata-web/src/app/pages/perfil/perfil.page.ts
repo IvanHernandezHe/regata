@@ -158,7 +158,12 @@ export class PerfilPage implements OnInit {
       });
   }
 
-  logout() { this.#authApi.logout().subscribe(); }
+  logout() {
+    this.#authApi.logout().subscribe({
+      next: () => { this.me = null; },
+      error: () => { this.me = null; }
+    });
+  }
 
   #msg(err: any): string {
     if (err?.error?.errors) return (Object.values(err.error.errors) as any[]).flat().join(' ');

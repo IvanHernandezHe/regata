@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Regata.Domain.Products;
+using Regata.Domain.Inventory;
 
 namespace Regata.API.Controllers;
 
@@ -17,18 +18,46 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Get([FromQuery] string? q)
     {
-        var query = _db.Products.AsNoTracking().Where(p => p.Active);
+        var now = DateTime.UtcNow;
+        var baseQuery = _db.Products.AsNoTracking().Where(p => p.Active);
         if (!string.IsNullOrWhiteSpace(q))
-            query = query.Where(p => p.Brand.Contains(q) || p.ModelName.Contains(q) || p.Sku.Contains(q));
-        var items = await query.OrderBy(p => p.Brand).Take(50).ToListAsync();
+            baseQuery = baseQuery.Where(p => p.Brand.Contains(q) || p.ModelName.Contains(q) || p.Sku.Contains(q));
+
+        var items = await (
+            from p in baseQuery
+            join i in _db.Inventory.AsNoTracking() on p.Id equals i.ProductId into invJoin
+            from inv in invJoin.DefaultIfEmpty()
+            let reserved = (_db.InventoryReservations
+                .Where(r => r.ProductId == p.Id && r.Status == ReservationStatus.Active && r.ExpiresAtUtc > now)
+                .Sum(r => (int?)r.Quantity)) ?? 0
+            let onHand = inv == null ? 0 : inv.OnHand
+            let stock = (onHand - reserved) < 0 ? 0 : (onHand - reserved)
+            orderby p.Brand
+            select new { p.Id, p.Sku, p.Brand, p.ModelName, p.Size, p.Price, p.Active, Stock = stock }
+        )
+        .Take(50)
+        .ToListAsync();
+
         return Ok(items);
     }
 
     [HttpGet("{id}")]
     [AllowAnonymous]
-    public async Task<ActionResult<Product>> GetById([FromRoute] Guid id)
+    public async Task<IActionResult> GetById([FromRoute] Guid id)
     {
-        var item = await _db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id && p.Active);
+        var now = DateTime.UtcNow;
+        var item = await (
+            from p in _db.Products.AsNoTracking().Where(x => x.Id == id && x.Active)
+            join i in _db.Inventory.AsNoTracking() on p.Id equals i.ProductId into invJoin
+            from inv in invJoin.DefaultIfEmpty()
+            let reserved = (_db.InventoryReservations
+                .Where(r => r.ProductId == p.Id && r.Status == ReservationStatus.Active && r.ExpiresAtUtc > now)
+                .Sum(r => (int?)r.Quantity)) ?? 0
+            let onHand = inv == null ? 0 : inv.OnHand
+            let stock = (onHand - reserved) < 0 ? 0 : (onHand - reserved)
+            select new { p.Id, p.Sku, p.Brand, p.ModelName, p.Size, p.Price, p.Active, Stock = stock }
+        ).FirstOrDefaultAsync();
+
         if (item is null) return NotFound();
         return Ok(item);
     }

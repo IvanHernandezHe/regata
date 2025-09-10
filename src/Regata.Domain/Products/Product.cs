@@ -8,12 +8,11 @@ public sealed class Product
     public string ModelName { get; private set; } = default!;
     public string Size { get; private set; } = default!; // 205/55R16
     public decimal Price { get; private set; }
-    public int Stock { get; private set; }
     public bool Active { get; private set; } = true;
 
-    public Product(string sku, string brand, string model, string size, decimal price, int stock)
+    public Product(string sku, string brand, string model, string size, decimal price)
     {
-        Sku = sku; Brand = brand; ModelName = model; Size = size; Price = price; Stock = stock;
+        Sku = sku; Brand = brand; ModelName = model; Size = size; Price = price;
     }
 
     private Product() { }

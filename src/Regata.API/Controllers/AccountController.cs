@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Regata.Application.Interface;
 
 namespace Regata.API.Controllers;
 
@@ -11,7 +12,8 @@ namespace Regata.API.Controllers;
 public sealed class AccountController : ControllerBase
 {
     private readonly UserManager<IdentityUser<Guid>> _users;
-    public AccountController(UserManager<IdentityUser<Guid>> users) => _users = users;
+    private readonly IAuditLogger _audit;
+    public AccountController(UserManager<IdentityUser<Guid>> users, IAuditLogger audit) { _users = users; _audit = audit; }
 
     [HttpGet("me")]
     public async Task<IActionResult> Me()
@@ -40,6 +42,7 @@ public sealed class AccountController : ControllerBase
         {
             return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
         }
+        await _audit.LogAsync("account.profile_updated", subjectType: "User", subjectId: user.Id.ToString());
 
         if (req.DisplayName is not null)
         {
@@ -70,6 +73,7 @@ public sealed class AccountController : ControllerBase
         {
             return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
         }
+        await _audit.LogAsync("account.password_changed", subjectType: "User", subjectId: user.Id.ToString());
         return NoContent();
     }
 }

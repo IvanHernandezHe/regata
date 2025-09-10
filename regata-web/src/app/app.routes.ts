@@ -7,6 +7,8 @@ export const routes: Routes = [
     { path: 'product/:id', loadComponent: () => import('./pages/product-detail/product-detail.page').then(m => m.ProductDetailPage) },
     { path: 'cart', loadComponent: () => import('./pages/cart/cart.page').then(m => m.CartPage) },
     { path: 'checkout', canActivate: [authGuard], loadComponent: () => import('./pages/checkout/checkout.page').then(m => m.CheckoutPage) },
+    { path: 'guardados', canActivate: [authGuard], loadComponent: () => import('./pages/wishlist/wishlist.page').then(m => m.WishlistPage) },
+    { path: 'admin/inventario', loadComponent: () => import('./pages/admin/inventory-admin.page').then(m => m.InventoryAdminPage) },
     { path: 'blog', loadComponent: () => import('./pages/blog/blog.page').then(m => m.BlogPage) },
     { path: 'nosotros', loadComponent: () => import('./pages/nosotros/nosotros.page').then(m => m.NosotrosPage) },
     { path: 'servicios', loadComponent: () => import('./pages/servicios/servicios.page').then(m => m.ServiciosPage) },

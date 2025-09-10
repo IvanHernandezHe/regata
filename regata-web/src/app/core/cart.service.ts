@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
 export interface CartItemDto { productId: string; qty: number; }
-export interface CartDtoItem { productId: string; name: string; sku: string; size: string; price: number; qty: number; }
+export interface CartDtoItem { productId: string; name: string; sku: string; size: string; price: number; qty: number; stock?: number; }
 export interface CartDto { id: string; userId?: string; items: CartDtoItem[]; subtotal: number; }
 
 @Injectable({ providedIn: 'root' })
@@ -13,5 +13,8 @@ export class CartService {
 
   get() { return this.#http.get<CartDto>(`${this.#base}`, { withCredentials: true }); }
   merge(items: CartItemDto[]) { return this.#http.post<CartDto>(`${this.#base}/merge`, { items }, { withCredentials: true }); }
+  add(productId: string, qty = 1) { return this.#http.post<CartDto>(`${this.#base}/items`, { productId, qty }, { withCredentials: true }); }
+  setQty(productId: string, qty: number) { return this.#http.put<CartDto>(`${this.#base}/items/${productId}`, { qty }, { withCredentials: true }); }
+  remove(productId: string) { return this.#http.delete<CartDto>(`${this.#base}/items/${productId}`, { withCredentials: true }); }
+  clear() { return this.#http.delete<CartDto>(`${this.#base}/clear`, { withCredentials: true }); }
 }
-

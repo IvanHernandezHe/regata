@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { tap } from 'rxjs/operators';
+import { catchError, finalize, tap } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { AuthStore } from '../state/auth.store';
 
 export interface SessionInfo {
@@ -33,9 +34,11 @@ export class AuthService {
   }
 
   logout() {
+    // Always clear local state; best-effort server sign-out; then refresh session
     return this.#http.post(`${this.#base}/logout`, {}, { withCredentials: true }).pipe(
-      tap(() => this.#store.clear())
+      catchError(() => of(null)),
+      tap(() => this.#store.clear()),
+      finalize(() => this.session().subscribe({ error: () => {} }))
     );
   }
 }
-

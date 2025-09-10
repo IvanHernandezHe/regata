@@ -31,6 +31,11 @@ import { CartService } from '../../../core/cart.service';
         </button>
         <div class="text-danger small" *ngIf="error">{{error}}</div>
       </form>
+      <div class="text-center my-2 text-muted">o</div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-dark w-100" (click)="social('Google')" [disabled]="loading">Google</button>
+        <button class="btn btn-outline-dark w-100" (click)="social('Facebook')" [disabled]="loading">Facebook</button>
+      </div>
     </ng-container>
     <ng-template #logged>
       <div class="d-flex justify-content-between align-items-center">
@@ -116,5 +121,10 @@ export class AuthWidgetComponent implements OnInit {
     done();
     const url = this.returnUrl && this.returnUrl.startsWith('/') ? this.returnUrl : '/perfil';
     this.#router.navigateByUrl(url);
+  }
+
+  social(provider: 'Google'|'Facebook') {
+    const returnUrl = window.location.origin + (this.returnUrl || '/perfil');
+    window.location.href = `/api/auth/external/${provider}?returnUrl=${encodeURIComponent(returnUrl)}`;
   }
 }

@@ -10,6 +10,7 @@ import { AuthService } from '../../../core/auth.service';
 import { Product } from '../../../core/models/product.model';
 import { Subject, debounceTime, distinctUntilChanged, of, switchMap, takeUntil, catchError, map, filter } from 'rxjs';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { WishlistStore } from '../../../state/wishlist.store';
 
 @Component({
   standalone: true,
@@ -42,6 +43,10 @@ import { BreakpointObserver } from '@angular/cdk/layout';
           <lucide-icon name="shopping-cart" size="20" [strokeWidth]="2.5"></lucide-icon>
           <span *ngIf="cart.count() > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" aria-live="polite" aria-atomic="true">{{ cart.count() }}</span>
         </a>
+        <a class="nav-icon position-relative" *ngIf="auth.isAuthenticated()" routerLink="/guardados" aria-label="Guardados">
+          <lucide-icon name="heart" size="20" [strokeWidth]="2.5"></lucide-icon>
+          <span *ngIf="wishlist.count() > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary">{{ wishlist.count() }}</span>
+        </a>
         <ng-container *ngIf="auth.isAuthenticated(); else guestUser">
           <div class="position-relative" #userMenuContainer>
             <button class="nav-icon" type="button" (click)="toggleUserMenu()" aria-label="Usuario" [attr.aria-expanded]="userMenuOpen">
@@ -73,6 +78,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
           <li class="nav-item d-lg-none" *ngIf="!auth.isAuthenticated()"><a class="nav-link" [routerLink]="['/auth']" [queryParams]="{ login: 1 }" (click)="closeMenuOnSmall()">Iniciar sesión</a></li>
           <li class="nav-item d-lg-none" *ngIf="!auth.isAuthenticated()"><a class="nav-link" [routerLink]="['/auth']" [queryParams]="{ register: 1 }" (click)="closeMenuOnSmall()">Crear cuenta</a></li>
           <li class="nav-item d-lg-none" *ngIf="auth.isAuthenticated()"><a class="nav-link" routerLink="/perfil" (click)="closeMenuOnSmall()">Perfil</a></li>
+          <li class="nav-item d-lg-none" *ngIf="auth.isAuthenticated()"><a class="nav-link" routerLink="/guardados" (click)="closeMenuOnSmall()">Guardados</a></li>
           <li class="nav-item d-lg-none" *ngIf="auth.isAuthenticated()"><a class="nav-link" href="#" (click)="$event.preventDefault(); logout();">Cerrar sesión</a></li>
         </ul>
 
@@ -132,6 +138,7 @@ export class NavbarComponent implements OnDestroy {
   #router = inject(Router);
   auth = inject(AuthStore);
   #authApi = inject(AuthService);
+  wishlist = inject(WishlistStore);
   @ViewChild('userMenuContainer') userMenuRef?: ElementRef<HTMLElement>;
   @ViewChild('searchContainer') searchContainerRef?: ElementRef<HTMLElement>;
   @ViewChild('searchInput') searchInputRef?: ElementRef<HTMLInputElement>;
@@ -284,8 +291,8 @@ export class NavbarComponent implements OnDestroy {
 
   logout() {
     this.#authApi.logout().subscribe({
-      next: () => { this.userMenuOpen = false; this.menuOpen = false; this.#authApi.session().subscribe(); this.#router.navigate(['/']); },
-      error: () => { this.userMenuOpen = false; this.menuOpen = false; this.#authApi.session().subscribe(); this.#router.navigate(['/']); }
+      next: () => { this.userMenuOpen = false; this.menuOpen = false; this.#router.navigate(['/']); },
+      error: () => { this.userMenuOpen = false; this.menuOpen = false; this.#router.navigate(['/']); }
     });
   }
 

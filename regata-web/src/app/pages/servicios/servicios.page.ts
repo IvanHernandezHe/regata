@@ -9,6 +9,7 @@ import { Component } from '@angular/core';
       <li>• Instalación a domicilio</li>
       <li>• Alineación y balanceo</li>
       <li>• Asesoría personalizada</li>
+      <li>• Servicio de emergencia</li>
     </ul>
   </section>
   `

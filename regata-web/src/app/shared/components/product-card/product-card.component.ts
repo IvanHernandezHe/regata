@@ -1,13 +1,16 @@
 import { Component, Input, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Product } from '../../../core/models/product.model';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, NgIf, NgClass } from '@angular/common';
 import { CartStore } from '../../../state/cart.store';
+import { AuthStore } from '../../../state/auth.store';
+import { WishlistStore } from '../../../state/wishlist.store';
+import { ToastService } from '../../../core/toast.service';
 
 @Component({
   standalone: true,
   selector: 'app-product-card',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, NgIf, NgClass],
   template: `
   <div class="card h-100">
     <a [routerLink]="['/product', product.id]">
@@ -19,10 +22,14 @@ import { CartStore } from '../../../state/cart.store';
           {{product.brand}} {{product.modelName}}
         </a>
       </h5>
-      <p class="card-text text-muted">{{product.size}} · SKU {{product.sku}}</p>
+      <p class="card-text text-muted m-0">{{product.size}} · SKU {{product.sku}}</p>
+      <span *ngIf="product.stock !== undefined" class="badge mt-1" [ngClass]="stockClass(product.stock || 0)">{{ stockLabel(product.stock || 0) }}</span>
       <div class="mt-auto d-flex justify-content-between align-items-center">
         <strong>{{ product.price | currency:'MXN' }}</strong>
-        <button class="btn btn-dark" (click)="addToCart()">Agregar</button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm" *ngIf="auth.isAuthenticated()" (click)="saveForLater()">Guardar</button>
+          <button class="btn btn-dark" (click)="addToCart()">Agregar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -31,8 +38,25 @@ import { CartStore } from '../../../state/cart.store';
 export class ProductCardComponent {
   @Input({ required: true }) product!: Product;
   #cart = inject(CartStore);
+  auth = inject(AuthStore);
+  #wishlist = inject(WishlistStore);
+  #toast = inject(ToastService);
 
   addToCart() {
     this.#cart.add(this.product);
+  }
+  saveForLater() {
+    this.#wishlist.add(this.product.id);
+  }
+
+  stockClass(stock: number) {
+    if (stock <= 5) return 'bg-danger';
+    if (stock <= 20) return 'bg-warning text-dark';
+    return 'bg-success';
+  }
+  stockLabel(stock: number) {
+    if (stock <= 5) return `Quedan ${stock}`;
+    if (stock <= 20) return `Stock bajo: ${stock}`;
+    return `Stock: ${stock}`;
   }
 }
