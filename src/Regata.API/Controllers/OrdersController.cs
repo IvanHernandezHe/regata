@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Regata.Application.DTOs;
 using Regata.Application.Interface;
 using Regata.Domain.Orders;
+using Regata.API.Payments;
+using Regata.Application.Validation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Regata.API.Controllers;
 
@@ -16,8 +19,13 @@ public sealed class OrdersController : ControllerBase
     private readonly IAuditLogger _audit;
     private readonly IOrdersService _svc;
     private readonly IInventoryService _inventory;
-    public OrdersController(UserManager<IdentityUser<Guid>> users, IAuditLogger audit, IOrdersService svc, IInventoryService inventory)
-    { _users = users; _audit = audit; _svc = svc; _inventory = inventory; }
+    private readonly IConfiguration _cfg;
+    private readonly StripeCheckoutService _stripe;
+    private readonly Regata.Infrastructure.Integration.WebhookDispatcher _webhooks;
+    private readonly Regata.Infrastructure.Persistence.AppDbContext _db;
+    private readonly IEmailSender _email;
+    public OrdersController(UserManager<IdentityUser<Guid>> users, IAuditLogger audit, IOrdersService svc, IInventoryService inventory, IConfiguration cfg, StripeCheckoutService stripe, Regata.Infrastructure.Integration.WebhookDispatcher webhooks, Regata.Infrastructure.Persistence.AppDbContext db, IEmailSender email)
+    { _users = users; _audit = audit; _svc = svc; _inventory = inventory; _cfg = cfg; _stripe = stripe; _webhooks = webhooks; _db = db; _email = email; }
 
     [HttpGet]
     public async Task<IActionResult> GetMine()
@@ -45,6 +53,7 @@ public sealed class OrdersController : ControllerBase
     public sealed record ReserveRequest(List<CheckoutItem> Items, int TtlSeconds = 600);
     public sealed record ReserveResponse(string Token, DateTime ExpiresAtUtc);
     public sealed record ReleaseReservationRequest(string Token);
+    public sealed record CancelOrderResponse(bool Cancelled);
 
     [HttpPost("checkout")]
     public async Task<IActionResult> Checkout([FromBody] CheckoutRequest req)
@@ -52,12 +61,41 @@ public sealed class OrdersController : ControllerBase
         var user = await _users.GetUserAsync(User);
         if (user is null) return Unauthorized();
         var lines = req.Items?.Select(i => new CheckoutLineDto(i.ProductId, i.Quantity)).ToList() ?? new List<CheckoutLineDto>();
-        if (lines.Count == 0) return BadRequest("No items provided for checkout.");
+        var validator = new CheckoutLinesValidator();
+        var validation = validator.Validate(lines);
+        if (!validation.IsValid)
+        {
+            var errors = validation.Errors.Select(e => e.ErrorMessage).ToArray();
+            return BadRequest(new { errors });
+        }
         CheckoutResponseDto result;
         try { result = await _svc.CheckoutAsync(user.Id, lines, req.DiscountCode, req.AddressId, req.ReservationToken, HttpContext.RequestAborted); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        var checkoutUrl = Url.ActionLink(nameof(PaySandbox), values: new { orderId = result.OrderId }) ?? $"/api/orders/pay/sandbox/{result.OrderId}";
+        // Decide payment provider
+        var provider = _cfg["Payments:Provider"] ?? "Sandbox";
+        string checkoutUrl;
+        if (provider.Equals("Stripe", StringComparison.OrdinalIgnoreCase))
+        {
+            var origins = _cfg.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "http://localhost:4200" };
+            var feBase = origins.FirstOrDefault() ?? "http://localhost:4200";
+            var successUrl = CombineUrl(feBase, "/perfil");
+            var cancelUrl = CombineUrl(feBase, "/cart");
+            try
+            {
+                checkoutUrl = await _stripe.CreateCheckoutAsync(result.OrderId, req.ReservationToken, successUrl, cancelUrl, HttpContext.RequestAborted);
+            }
+            catch (Exception ex)
+            {
+                await _audit.LogAsync("order.checkout_stripe_error", subjectType: nameof(Order), subjectId: result.OrderId.ToString(), description: ex.Message);
+                return StatusCode(500, new { error = "No se pudo iniciar el pago" });
+            }
+        }
+        else
+        {
+            checkoutUrl = Url.ActionLink(nameof(PaySandbox), values: new { orderId = result.OrderId }) ?? $"/api/orders/pay/sandbox/{result.OrderId}";
+        }
         await _audit.LogAsync("order.checkout_initiated", subjectType: nameof(Order), subjectId: result.OrderId.ToString(), metadata: new { result.Total, result.Subtotal, result.Discount });
+        _ = _webhooks.SendAsync("order.created", new { orderId = result.OrderId, total = result.Total, currency = result.Currency }, HttpContext.RequestAborted);
         return CreatedAtAction(nameof(GetMine), new { }, new { result.OrderId, result.Subtotal, result.Discount, result.Shipping, result.Total, result.Currency, CheckoutUrl = checkoutUrl });
     }
 
@@ -66,7 +104,13 @@ public sealed class OrdersController : ControllerBase
     public async Task<IActionResult> Quote([FromBody] CheckoutRequest req)
     {
         var qLines = req.Items?.Select(i => new CheckoutLineDto(i.ProductId, i.Quantity)).ToList() ?? new List<CheckoutLineDto>();
-        if (qLines.Count == 0) return BadRequest("No items provided.");
+        var validator = new CheckoutLinesValidator();
+        var validation = validator.Validate(qLines);
+        if (!validation.IsValid)
+        {
+            var errors = validation.Errors.Select(e => e.ErrorMessage).ToArray();
+            return BadRequest(new { errors });
+        }
         try { var quote = await _svc.QuoteAsync(qLines, req.DiscountCode, HttpContext.RequestAborted); return Ok(quote); }
         catch (Exception ex) { return BadRequest(ex.Message); }
     }
@@ -83,6 +127,16 @@ public sealed class OrdersController : ControllerBase
             var ok = await _svc.MarkPaidSandboxAsync(user.Id, orderId, HttpContext.RequestAborted);
             await _audit.LogAsync(ok ? "order.paid_sandbox" : "order.paid_sandbox_inventory_short",
                 subjectType: nameof(Order), subjectId: orderId.ToString());
+            if (ok)
+            {
+                var order = await _db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId);
+                if (order is not null)
+                {
+                    var u = await _users.FindByIdAsync(order.UserId.ToString());
+                    if (u?.Email is not null) { _ = _email.SendAsync(u.Email, "Confirmación de pago", $"<p>Gracias por tu compra. Pedido {order.Id}</p>"); }
+                    _ = _webhooks.SendAsync("order.paid", new { orderId = order.Id, total = order.Total, currency = order.Currency }, HttpContext.RequestAborted);
+                }
+            }
         }
         catch (KeyNotFoundException) { return NotFound(); }
         catch (UnauthorizedAccessException) { return Forbid(); }
@@ -110,5 +164,27 @@ public sealed class OrdersController : ControllerBase
         await _svc.ReleaseAsync(req.Token, HttpContext.RequestAborted);
         await _audit.LogAsync("inventory.reservation_released", subjectType: "Reservation", subjectId: req.Token);
         return NoContent();
+    }
+
+    [HttpPost("{orderId}/cancel")]
+    public async Task<IActionResult> Cancel([FromRoute] Guid orderId)
+    {
+        var user = await _users.GetUserAsync(User);
+        if (user is null) return Unauthorized();
+        try
+        {
+            var ok = await _svc.CancelAsync(user.Id, orderId, HttpContext.RequestAborted);
+            await _audit.LogAsync(ok ? "order.cancelled" : "order.cancel_denied", subjectType: nameof(Order), subjectId: orderId.ToString());
+            if (!ok) return Conflict(new { error = "No se puede cancelar una orden pagada" });
+            return Ok(new CancelOrderResponse(true));
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+    }
+    private static string CombineUrl(string baseUrl, string path)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl)) return path;
+        if (string.IsNullOrWhiteSpace(path)) return baseUrl.TrimEnd('/');
+        return baseUrl.TrimEnd('/') + (path.StartsWith('/') ? path : "/" + path);
     }
 }

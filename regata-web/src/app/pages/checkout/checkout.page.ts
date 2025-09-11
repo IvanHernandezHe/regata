@@ -4,6 +4,7 @@ import { CurrencyPipe, NgIf, NgFor, DatePipe } from '@angular/common';
 import { OrdersService } from '../../core/orders.service';
 import { AddressesService, AddressDto } from '../../core/addresses.service';
 import { FormsModule } from '@angular/forms';
+import { ConfigService } from '../../core/config.service';
 
 @Component({
   standalone: true,
@@ -73,7 +74,7 @@ import { FormsModule } from '@angular/forms';
         Reserva activa: <code>{{ t }}</code>
         <span *ngIf="reservationExpires"> · expira: {{ reservationExpires | date:'short' }}</span>
       </div>
-      <button class="btn btn-success" (click)="pay()" [disabled]="cart.items().length===0 || paying">Pagar (sandbox)</button>
+      <button class="btn btn-success" (click)="pay()" [disabled]="cart.items().length===0 || paying">{{ payLabel }}</button>
     </div>
   </section>
   `
@@ -82,8 +83,10 @@ export class CheckoutPage {
   cart = inject(CartStore);
   #orders = inject(OrdersService);
   #addresses = inject(AddressesService);
+  #cfg = inject(ConfigService);
   paying = false;
   quoting = false;
+  payLabel = 'Pagar (sandbox)';
   summary: { subtotal: number; discount: number; shipping: number; total: number; items: any[] } | null = null;
   reservationToken: string | null = null;
   reservationExpires: string | null = null;
@@ -137,6 +140,7 @@ export class CheckoutPage {
 
   ngOnInit() {
     this.#addresses.list().subscribe({ next: (l) => { this.addresses = l; this.selectedAddressId = (l.find(x => x.isDefault)?.id) || (l[0]?.id || null); }, error: () => {} });
+    this.#cfg.get().subscribe({ next: (c) => { this.payLabel = (c.payments?.provider === 'Stripe') ? 'Pagar' : 'Pagar (sandbox)'; }, error: () => {} });
   }
 
   toggleAdd() { this.showAdd = !this.showAdd; }

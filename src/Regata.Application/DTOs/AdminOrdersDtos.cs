@@ -29,7 +29,10 @@ public sealed record ShipDto(
     string? ShipCity,
     string? ShipState,
     string? ShipPostalCode,
-    string? ShipCountry
+    string? ShipCountry,
+    string? TrackingCarrier,
+    string? TrackingCode,
+    DateTime? ShippedAtUtc
 );
 
 public sealed record AdminOrderDetailDto(
@@ -48,4 +51,3 @@ public sealed record AdminOrderDetailDto(
     ShipDto? Ship,
     IReadOnlyList<AdminOrderItemDto> Items
 );
-

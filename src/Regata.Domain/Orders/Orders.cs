@@ -29,6 +29,10 @@ public sealed class Order
     public string? ShipPostalCode { get; private set; }
     public string? ShipCountry { get; private set; }
     public decimal ShippingCost { get; private set; }
+    // Shipment tracking (MVP)
+    public string? ShipTrackingCarrier { get; private set; }
+    public string? ShipTrackingCode { get; private set; }
+    public DateTime? ShippedAtUtc { get; private set; }
 
     // Domain behaviors
     public void Initialize(Guid userId, decimal subtotal, decimal discountAmount, decimal shippingCost, decimal total, string currency, string? discountCode = null)
@@ -50,6 +54,13 @@ public sealed class Order
     public void SetShippingAddress(string line1, string? line2, string city, string state, string postalCode, string country)
     {
         ShipLine1 = line1; ShipLine2 = line2; ShipCity = city; ShipState = state; ShipPostalCode = postalCode; ShipCountry = country;
+    }
+
+    public void SetShipmentTracking(string? carrier, string? trackingCode, DateTime? shippedAtUtc)
+    {
+        ShipTrackingCarrier = string.IsNullOrWhiteSpace(carrier) ? null : carrier;
+        ShipTrackingCode = string.IsNullOrWhiteSpace(trackingCode) ? null : trackingCode;
+        ShippedAtUtc = shippedAtUtc;
     }
 
     public void AddItem(Guid productId, string productName, string sku, string size, decimal unitPrice, int quantity)

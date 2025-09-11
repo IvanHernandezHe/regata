@@ -8,6 +8,7 @@ import { AuthStore } from '../state/auth.store';
 export interface SessionInfo {
   authenticated: boolean;
   email: string | null;
+  isAdmin?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

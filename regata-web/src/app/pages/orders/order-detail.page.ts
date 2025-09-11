@@ -31,6 +31,8 @@ import { NgIf, NgFor, CurrencyPipe, DatePipe } from '@angular/common';
         <div class="card p-3">
           <div class="mb-1">Estado: <span class="badge text-bg-light">{{ order.status }}</span></div>
           <div class="mb-1">Pago: <span class="badge text-bg-secondary">{{ order.paymentStatus }}</span></div>
+          <div class="mb-1">Método: <span class="badge text-bg-info text-dark">{{ order.paymentProvider }}</span></div>
+          <div class="mb-1" *ngIf="order.paymentReference">Referencia: <code>{{ order.paymentReference }}</code></div>
           <div class="mb-1">Subtotal: {{ order.subtotal | currency:'MXN' }}</div>
           <div class="mb-1" *ngIf="order.discountAmount>0">Descuento: −{{ order.discountAmount | currency:'MXN' }}</div>
           <div class="mb-1">Envío: {{ order.shippingCost | currency:'MXN' }}</div>
@@ -53,4 +55,3 @@ export class OrderDetailPage implements OnInit {
     this.#orders.getById(id).subscribe({ next: (x) => this.o = x, error: () => this.o = null });
   }
 }
-

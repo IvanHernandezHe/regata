@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Regata.Infrastructure.Inventory;
+using Regata.Infrastructure.Messaging;
+using Regata.Infrastructure.Integration;
 
 namespace Regata.API.Extensions;
 
@@ -52,6 +54,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrdersService, OrdersService>();
         services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IInventoryAdminService, InventoryAdminService>();
+        services.AddScoped<IShippingCalculator, DefaultShippingCalculator>();
+        services.AddScoped<Regata.Application.Interface.IEmailSender, EmailSender>();
+        services.AddHttpClient<Regata.Infrastructure.Integration.WebhookDispatcher>();
+        services.AddScoped<Regata.API.Payments.StripeCheckoutService>();
 
         var authBuilder = services.AddAuthentication();
         var gid = cfg["Authentication:Google:ClientId"];

@@ -11,8 +11,9 @@ public sealed class OrdersService : IOrdersService
 {
     private readonly AppDbContext _db;
     private readonly IInventoryService _inventory;
-    public OrdersService(AppDbContext db, IInventoryService inventory)
-    { _db = db; _inventory = inventory; }
+    private readonly IShippingCalculator _shipping;
+    public OrdersService(AppDbContext db, IInventoryService inventory, IShippingCalculator shipping)
+    { _db = db; _inventory = inventory; _shipping = shipping; }
 
     public async Task<IReadOnlyList<OrderSummaryDto>> GetMineAsync(Guid userId, int take = 20, CancellationToken ct = default)
     {
@@ -33,7 +34,7 @@ public sealed class OrdersService : IOrdersService
             .Where(i => i.OrderId == id)
             .Select(i => new OrderItemLineDto(i.ProductId, i.ProductName, i.ProductSku, i.Size, i.UnitPrice, i.Quantity, i.UnitPrice * i.Quantity))
             .ToListAsync(ct);
-        return new OrderDetailDto(order.Id, order.Total, order.Subtotal, order.DiscountAmount, order.Currency, order.Status.ToString(), order.PaymentStatus.ToString(), order.PaymentProvider.ToString(), order.CreatedAtUtc, items);
+        return new OrderDetailDto(order.Id, order.Total, order.Subtotal, order.DiscountAmount, order.ShippingCost, order.Currency, order.Status.ToString(), order.PaymentStatus.ToString(), order.PaymentProvider.ToString(), order.PaymentReference, order.CreatedAtUtc, items);
     }
 
     public async Task<QuoteResponseDto> QuoteAsync(IReadOnlyList<CheckoutLineDto> items, string? discountCode, CancellationToken ct = default)
@@ -61,7 +62,7 @@ public sealed class OrdersService : IOrdersService
                 else if (dc.Type == DiscountType.FixedAmount) discount = Math.Max(0m, Math.Min(subtotal, dc.Value));
             }
         }
-        decimal shipping = subtotal >= 5000m ? 0m : 99m;
+        decimal shipping = await _shipping.CalculateAsync(subtotal, ct);
         var total = Math.Max(0m, subtotal - discount + shipping);
         return new QuoteResponseDto(subtotal, discount, shipping, total, "MXN", lines);
     }
@@ -148,6 +149,36 @@ public sealed class OrdersService : IOrdersService
         if (!committed) return false; // not enough inventory
 
         order.MarkPaid();
+        // Increment discount redemptions if applicable
+        if (!string.IsNullOrWhiteSpace(order.DiscountCode))
+        {
+            var dc = await _db.DiscountCodes.FirstOrDefaultAsync(x => x.Code == order.DiscountCode, ct);
+            if (dc is not null)
+            {
+                var prop = typeof(Regata.Domain.Marketing.DiscountCode).GetProperty(nameof(Regata.Domain.Marketing.DiscountCode.Redemptions))!;
+                var curr = (int)(prop.GetValue(dc) ?? 0);
+                prop.SetValue(dc, curr + 1);
+            }
+        }
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> CancelAsync(Guid userId, Guid orderId, CancellationToken ct = default)
+    {
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == orderId, ct);
+        if (order is null) throw new KeyNotFoundException();
+        if (order.UserId != userId) throw new UnauthorizedAccessException();
+        if (order.PaymentStatus == PaymentStatus.Succeeded) return false; // cannot cancel paid orders
+
+        // Release any existing reservation
+        if (!string.IsNullOrWhiteSpace(order.PaymentReference) && order.PaymentReference!.StartsWith("resv:", StringComparison.OrdinalIgnoreCase))
+        {
+            var token = order.PaymentReference!.Substring(5);
+            try { await _inventory.ReleaseAsync(token, ct); } catch { }
+        }
+
+        order.GetType().GetProperty(nameof(Order.Status))!.SetValue(order, OrderStatus.Cancelled);
         await _db.SaveChangesAsync(ct);
         return true;
     }

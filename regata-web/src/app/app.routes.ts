@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { adminGuard } from './core/admin.guard';
 
 export const routes: Routes = [
     { path: '', loadComponent: () => import('./pages/landing/landing.page').then(m => m.LandingPage) },
@@ -8,9 +9,9 @@ export const routes: Routes = [
     { path: 'cart', loadComponent: () => import('./pages/cart/cart.page').then(m => m.CartPage) },
     { path: 'checkout', canActivate: [authGuard], loadComponent: () => import('./pages/checkout/checkout.page').then(m => m.CheckoutPage) },
     { path: 'guardados', canActivate: [authGuard], loadComponent: () => import('./pages/wishlist/wishlist.page').then(m => m.WishlistPage) },
-    { path: 'admin/inventario', loadComponent: () => import('./pages/admin/inventory-admin.page').then(m => m.InventoryAdminPage) },
-    { path: 'admin/pedidos', loadComponent: () => import('./pages/admin/orders-admin.page').then(m => m.OrdersAdminPage) },
-    { path: 'admin/pedidos/:id', loadComponent: () => import('./pages/admin/order-admin-detail.page').then(m => m.OrderAdminDetailPage) },
+    { path: 'admin/inventario', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/inventory-admin.page').then(m => m.InventoryAdminPage) },
+    { path: 'admin/pedidos', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/orders-admin.page').then(m => m.OrdersAdminPage) },
+    { path: 'admin/pedidos/:id', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/order-admin-detail.page').then(m => m.OrderAdminDetailPage) },
     { path: 'blog', loadComponent: () => import('./pages/blog/blog.page').then(m => m.BlogPage) },
     { path: 'nosotros', loadComponent: () => import('./pages/nosotros/nosotros.page').then(m => m.NosotrosPage) },
     { path: 'servicios', loadComponent: () => import('./pages/servicios/servicios.page').then(m => m.ServiciosPage) },

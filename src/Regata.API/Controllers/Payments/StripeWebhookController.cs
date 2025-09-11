@@ -3,6 +3,7 @@ using Stripe;
 using Regata.Infrastructure.Persistence;
 using Regata.Application.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace Regata.API.Controllers.Payments;
 
@@ -14,8 +15,11 @@ public sealed class StripeWebhookController : ControllerBase
     private readonly IAuditLogger _audit;
     private readonly IInventoryService _inventory;
     private readonly IConfiguration _cfg;
-    public StripeWebhookController(AppDbContext db, IAuditLogger audit, IInventoryService inventory, IConfiguration cfg)
-    { _db = db; _audit = audit; _inventory = inventory; _cfg = cfg; }
+    private readonly UserManager<IdentityUser<Guid>> _users;
+    private readonly IEmailSender _email;
+    private readonly Regata.Infrastructure.Integration.WebhookDispatcher _webhooks;
+    public StripeWebhookController(AppDbContext db, IAuditLogger audit, IInventoryService inventory, IConfiguration cfg, UserManager<IdentityUser<Guid>> users, IEmailSender email, Regata.Infrastructure.Integration.WebhookDispatcher webhooks)
+    { _db = db; _audit = audit; _inventory = inventory; _cfg = cfg; _users = users; _email = email; _webhooks = webhooks; }
 
     [HttpPost]
     public async Task<IActionResult> Receive()
@@ -57,9 +61,23 @@ public sealed class StripeWebhookController : ControllerBase
                         {
                             order.GetType().GetProperty(nameof(Domain.Orders.Order.PaymentStatus))!.SetValue(order, Domain.Orders.PaymentStatus.Succeeded);
                             order.GetType().GetProperty(nameof(Domain.Orders.Order.Status))!.SetValue(order, Domain.Orders.OrderStatus.Paid);
+                            // Increment discount redemptions if applicable
+                            if (!string.IsNullOrWhiteSpace(order.DiscountCode))
+                            {
+                                var dc = await _db.DiscountCodes.FirstOrDefaultAsync(x => x.Code == order.DiscountCode);
+                                if (dc is not null)
+                                {
+                                    var prop = typeof(Regata.Domain.Marketing.DiscountCode).GetProperty(nameof(Regata.Domain.Marketing.DiscountCode.Redemptions))!;
+                                    var curr = (int)(prop.GetValue(dc) ?? 0);
+                                    prop.SetValue(dc, curr + 1);
+                                }
+                            }
                             await _db.SaveChangesAsync();
                             var ok = await _inventory.CommitOnPaymentAsync(order, resv);
                             await _audit.LogAsync(ok ? "order.paid_stripe" : "order.paid_stripe_inventory_short", subjectType: nameof(Domain.Orders.Order), subjectId: order.Id.ToString());
+                            var u = await _users.FindByIdAsync(order.UserId.ToString());
+                            if (u?.Email is not null) { _ = _email.SendAsync(u.Email, "Confirmación de pago", $"<p>Gracias por tu compra. Pedido {order.Id}</p>"); }
+                            _ = _webhooks.SendAsync("order.paid", new { orderId = order.Id, total = order.Total, currency = order.Currency }, HttpContext.RequestAborted);
                         }
                     }
                     break;
@@ -76,9 +94,22 @@ public sealed class StripeWebhookController : ControllerBase
                         {
                             order.GetType().GetProperty(nameof(Domain.Orders.Order.PaymentStatus))!.SetValue(order, Domain.Orders.PaymentStatus.Succeeded);
                             order.GetType().GetProperty(nameof(Domain.Orders.Order.Status))!.SetValue(order, Domain.Orders.OrderStatus.Paid);
+                            if (!string.IsNullOrWhiteSpace(order.DiscountCode))
+                            {
+                                var dc = await _db.DiscountCodes.FirstOrDefaultAsync(x => x.Code == order.DiscountCode);
+                                if (dc is not null)
+                                {
+                                    var prop = typeof(Regata.Domain.Marketing.DiscountCode).GetProperty(nameof(Regata.Domain.Marketing.DiscountCode.Redemptions))!;
+                                    var curr = (int)(prop.GetValue(dc) ?? 0);
+                                    prop.SetValue(dc, curr + 1);
+                                }
+                            }
                             await _db.SaveChangesAsync();
                             var ok = await _inventory.CommitOnPaymentAsync(order, resv);
                             await _audit.LogAsync(ok ? "order.paid_stripe" : "order.paid_stripe_inventory_short", subjectType: nameof(Domain.Orders.Order), subjectId: order.Id.ToString());
+                            var u = await _users.FindByIdAsync(order.UserId.ToString());
+                            if (u?.Email is not null) { _ = _email.SendAsync(u.Email, "Confirmación de pago", $"<p>Gracias por tu compra. Pedido {order.Id}</p>"); }
+                            _ = _webhooks.SendAsync("order.paid", new { orderId = order.Id, total = order.Total, currency = order.Currency }, HttpContext.RequestAborted);
                         }
                     }
                     break;

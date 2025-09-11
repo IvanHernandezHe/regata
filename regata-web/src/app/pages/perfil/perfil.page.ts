@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { NgIf, NgFor, CurrencyPipe, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { AccountService, AccountMe } from '../../core/account.service';
 import { OrdersService, OrderSummary } from '../../core/orders.service';
@@ -7,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   standalone: true,
-  imports: [NgIf, NgFor, FormsModule, CurrencyPipe, DatePipe],
+  imports: [NgIf, NgFor, FormsModule, CurrencyPipe, DatePipe, RouterLink],
   styles: [`
     .card { border-radius: .75rem; border: 1px solid rgba(0,0,0,.08); }
     .tabs { border-bottom: 1px solid rgba(0,0,0,.08); }
@@ -77,13 +78,16 @@ import { FormsModule } from '@angular/forms';
         <div *ngIf="orders.length; else noOrders">
           <div class="table-responsive">
             <table class="table align-middle">
-              <thead><tr><th>Folio</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+              <thead><tr><th>Folio</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>
               <tbody>
                 <tr *ngFor="let o of orders">
-                  <td class="small">{{ o.id }}</td>
+                  <td class="small"><a [routerLink]="['/orders', o.id]">{{ o.id }}</a></td>
                   <td>{{ o.createdAtUtc | date:'medium' }}</td>
                   <td>{{ o.total | currency:'MXN' }}</td>
                   <td>{{ o.status }}</td>
+                  <td class="text-end">
+                    <button *ngIf="o.status==='Created'" class="btn btn-sm btn-outline-danger" (click)="cancel(o.id)">Cancelar</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -114,6 +118,7 @@ export class PerfilPage implements OnInit {
   changing = false; changed = false;
   // pedidos
   orders: OrderSummary[] = [];
+  canceling = false;
 
   ngOnInit() {
     this.refresh();
@@ -133,6 +138,15 @@ export class PerfilPage implements OnInit {
 
   loadOrders() {
     this.#ordersApi.listMine().subscribe({ next: (o) => (this.orders = o), error: () => (this.orders = []) });
+  }
+
+  cancel(id: string) {
+    if (!confirm('¿Cancelar este pedido?')) return;
+    this.canceling = true;
+    this.#ordersApi.cancel(id).subscribe({
+      next: () => { this.canceling = false; this.loadOrders(); },
+      error: (err) => { this.canceling = false; alert(err?.error?.error || 'No se pudo cancelar'); }
+    });
   }
 
   saveProfile(e: Event) {

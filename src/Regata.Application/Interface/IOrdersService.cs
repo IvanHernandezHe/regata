@@ -11,4 +11,5 @@ public interface IOrdersService
     Task<ReserveResponseDto> ReserveAsync(IReadOnlyList<CheckoutLineDto> items, int ttlSeconds, CancellationToken ct = default);
     Task ReleaseAsync(string token, CancellationToken ct = default);
     Task<bool> MarkPaidSandboxAsync(Guid userId, Guid orderId, CancellationToken ct = default);
+    Task<bool> CancelAsync(Guid userId, Guid orderId, CancellationToken ct = default);
 }

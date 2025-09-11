@@ -23,9 +23,10 @@ public class AuthSessionController : ControllerBase
             var email = User.Claims.FirstOrDefault(c => c.Type.EndsWith("/email", StringComparison.OrdinalIgnoreCase))?.Value
                         ?? User.Identity!.Name
                         ?? string.Empty;
-            return Ok(new { authenticated = true, email });
+            var isAdmin = User.IsInRole("Admin") || User.Claims.Any(c => c.Type.EndsWith("/role", StringComparison.OrdinalIgnoreCase) && string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
+            return Ok(new { authenticated = true, email, isAdmin });
         }
-        return Ok(new { authenticated = false, email = (string?)null });
+        return Ok(new { authenticated = false, email = (string?)null, isAdmin = false });
     }
 
     [HttpPost("logout")]

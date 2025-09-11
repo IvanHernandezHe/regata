@@ -22,10 +22,12 @@ public sealed record OrderDetailDto(
     decimal Total,
     decimal Subtotal,
     decimal DiscountAmount,
+    decimal ShippingCost,
     string Currency,
     string Status,
     string PaymentStatus,
     string PaymentProvider,
+    string? PaymentReference,
     DateTime CreatedAtUtc,
     IReadOnlyList<OrderItemLineDto> Items
 );
@@ -51,4 +53,3 @@ public sealed record CheckoutResponseDto(
 );
 
 public sealed record ReserveResponseDto(string Token, DateTime ExpiresAtUtc);
-

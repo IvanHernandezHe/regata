@@ -7,7 +7,7 @@ namespace Regata.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // consider tightening to Admin-only when roles are in place
+[Authorize(Roles = "Admin")]
 public sealed class AuditController : ControllerBase
 {
     private readonly IAuditQueryService _svc;

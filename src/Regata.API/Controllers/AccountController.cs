@@ -22,7 +22,8 @@ public sealed class AccountController : ControllerBase
         if (user is null) return Unauthorized();
         var claims = await _users.GetClaimsAsync(user);
         var displayName = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-        return Ok(new { id = user.Id, email = user.Email, phoneNumber = user.PhoneNumber, emailConfirmed = user.EmailConfirmed, displayName });
+        var isAdmin = User.IsInRole("Admin") || claims.Any(c => c.Type == ClaimTypes.Role && string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
+        return Ok(new { id = user.Id, email = user.Email, phoneNumber = user.PhoneNumber, emailConfirmed = user.EmailConfirmed, displayName, isAdmin });
     }
 
     public sealed record UpdateProfileRequest(string? PhoneNumber, string? DisplayName);

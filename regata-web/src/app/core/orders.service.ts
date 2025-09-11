@@ -21,4 +21,5 @@ export class OrdersService {
   quote(body: CheckoutRequest) { return this.#http.post<QuoteResponse>(`${this.#base}/quote`, body, { withCredentials: true }); }
   reserve(body: ReserveRequest) { return this.#http.post<ReserveResponse>(`${this.#base}/reserve`, body, { withCredentials: true }); }
   releaseReservation(token: string) { return this.#http.post(`${this.#base}/release`, { token }, { withCredentials: true }); }
+  cancel(id: string) { return this.#http.post<{ cancelled: boolean }>(`${this.#base}/${id}/cancel`, {}, { withCredentials: true }); }
 }
