@@ -1,12 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { AdminOrdersService, AdminOrderSummary } from '../../core/admin-orders.service';
-import { NgFor, NgIf, DatePipe, CurrencyPipe } from '@angular/common';
+import { NgFor, DatePipe, CurrencyPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   standalone: true,
-  imports: [NgFor, NgIf, DatePipe, CurrencyPipe, RouterLink, FormsModule],
+  imports: [NgFor, DatePipe, CurrencyPipe, RouterLink, FormsModule],
   template: `
   <section class="container my-4">
     <h2>Pedidos (Admin)</h2>

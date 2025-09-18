@@ -1,11 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { AdminInventoryService, InventoryRow, TxnRow } from '../../core/admin-inventory.service';
-import { NgFor, NgIf, DecimalPipe, DatePipe } from '@angular/common';
+import { NgFor, NgIf, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   standalone: true,
-  imports: [NgFor, NgIf, DecimalPipe, DatePipe, FormsModule],
+  imports: [NgFor, NgIf, DatePipe, FormsModule],
   template: `
   <section class="container my-4">
     <h2>Inventario (Admin)</h2>
@@ -29,7 +29,7 @@ import { FormsModule } from '@angular/forms';
       <div class="col-12 col-md-4">
         <div class="card p-3">
           <h5 class="card-title">Ajustar inventario</h5>
-          <div class="mb-2 small text-muted">Producto: <span *ngIf="selected">{{ selected?.sku }}</span><span *ngIf="!selected">(selecciona de la lista)</span></div>
+          <div class="mb-2 small text-muted">Producto: <span *ngIf="selected">{{ selected.sku }}</span><span *ngIf="!selected">(selecciona de la lista)</span></div>
           <input class="form-control mb-2" type="number" placeholder="Delta (ej. 5 o -3)" [(ngModel)]="delta" [disabled]="!selected"/>
           <input class="form-control mb-2" placeholder="Motivo" [(ngModel)]="reason" [disabled]="!selected"/>
           <button class="btn btn-dark" (click)="adjust()" [disabled]="!selected || !delta">Aplicar</button>

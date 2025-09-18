@@ -1,12 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AdminOrdersService, AdminOrderDetail } from '../../core/admin-orders.service';
-import { NgIf, NgFor, CurrencyPipe, DatePipe } from '@angular/common';
+import { NgIf, NgFor, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   standalone: true,
-  imports: [NgIf, NgFor, CurrencyPipe, DatePipe, FormsModule],
+  imports: [NgIf, NgFor, CurrencyPipe, FormsModule],
   template: `
   <section class="container my-4" *ngIf="o as order; else loading">
     <h2>Pedido {{ order.id }}</h2>

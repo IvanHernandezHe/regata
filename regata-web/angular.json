@@ -13,10 +13,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "scripts": [
-              "node_modules/@popperjs/core/dist/umd/popper.min.js",
-              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
-            ],
+            "scripts": [],
             "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
