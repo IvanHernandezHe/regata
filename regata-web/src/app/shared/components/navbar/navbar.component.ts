@@ -17,7 +17,7 @@ import { WishlistStore } from '../../../state/wishlist.store';
   selector: 'app-navbar',
   imports: [RouterLink, RouterLinkActive, NgIf, NgFor, SlicePipe, FormsModule, LucideAngularModule],
   styles: [`
-    .nav-icon { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; color: inherit; padding: 0; }
+    .nav-icon { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; color: inherit; padding: 0; overflow: visible; }
     /* Hover/active disabled for a cleaner minimal look */
     .nav-search { max-width: 520px; }
     .nav-input { border-radius: .5rem; padding-left: 38px; padding-right: 44px; background: var(--bs-tertiary-bg, #f8f9fa); border: 1px solid rgba(0,0,0,.08); }
@@ -26,6 +26,7 @@ import { WishlistStore } from '../../../state/wishlist.store';
     .nav-ico-left { left: 10px; }
     .nav-ico-right { right: 8px; cursor: pointer; background: transparent; border: 0; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
     .dropdown-menu.show { display: block; }
+    .badge-counter { position: absolute; top: -4px; right: -4px; transform: none; }
   `],
   template: `
   <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom">
@@ -41,11 +42,11 @@ import { WishlistStore } from '../../../state/wishlist.store';
         </button>
         <a class="nav-icon position-relative" routerLink="/cart" [attr.aria-label]="'Carrito, ' + cart.count() + ' artículos'">
           <lucide-icon name="shopping-cart" size="20" [strokeWidth]="2.5"></lucide-icon>
-          <span *ngIf="cart.count() > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" aria-live="polite" aria-atomic="true">{{ cart.count() }}</span>
+          <span *ngIf="cart.count() > 0" class="badge badge-counter rounded-pill bg-danger" aria-live="polite" aria-atomic="true">{{ cart.count() }}</span>
         </a>
         <a class="nav-icon position-relative" *ngIf="auth.isAuthenticated()" routerLink="/guardados" aria-label="Guardados">
           <lucide-icon name="heart" size="20" [strokeWidth]="2.5"></lucide-icon>
-          <span *ngIf="wishlist.count() > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary">{{ wishlist.count() }}</span>
+          <span *ngIf="wishlist.count() > 0" class="badge badge-counter rounded-pill bg-secondary">{{ wishlist.count() }}</span>
         </a>
         <ng-container *ngIf="auth.isAuthenticated(); else guestUser">
           <div class="position-relative" #userMenuContainer>

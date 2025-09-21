@@ -8,12 +8,11 @@ export class ApiService {
   private http = inject(HttpClient);
   private base = environment.apiBaseUrl;
 
-  getProducts(q?: string) {
-    if (q && q.length) {
-      const params = new HttpParams().set('q', q);
-      return this.http.get<Product[]>(`${this.base}/products`, { params });
-    }
-    return this.http.get<Product[]>(`${this.base}/products`);
+  getProducts(q?: string, category?: string) {
+    let params = new HttpParams();
+    if (q && q.length) params = params.set('q', q);
+    if (category && category.length) params = params.set('category', category);
+    return this.http.get<Product[]>(`${this.base}/products`, { params });
   }
 
   getProduct(id: string) {

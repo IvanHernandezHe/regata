@@ -8,7 +8,8 @@ public sealed record ProductListItemDto(
     string Size,
     decimal Price,
     bool Active,
-    int Stock
+    int Stock,
+    string? Category
 );
 
 public sealed record ProductDetailDto(
@@ -19,6 +20,13 @@ public sealed record ProductDetailDto(
     string Size,
     decimal Price,
     bool Active,
-    int Stock
+    int Stock,
+    string? BrandLogoUrl,
+    IReadOnlyList<string> Images,
+    TireSpecsDto? Tire,
+    RimSpecsDto? Rim,
+    string? Category
 );
 
+public sealed record TireSpecsDto(string? Type, string? LoadIndex, string? SpeedRating);
+public sealed record RimSpecsDto(double? DiameterIn, double? WidthIn, string? BoltPattern, int? OffsetMm, double? CenterBoreMm, string? Material, string? Finish);

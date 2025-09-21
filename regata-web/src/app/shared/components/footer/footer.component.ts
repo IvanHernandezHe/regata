@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DOCUMENT } from '@angular/common';
+import { ThemeService } from '../../../core/theme.service';
 
 @Component({
   standalone: true,
@@ -65,17 +65,15 @@ import { DOCUMENT } from '@angular/common';
         <div class="muted">© {{year}} Regata. Todos los derechos reservados.</div>
         <div class="d-flex gap-3 align-items-center">
           <div class="theme-toggle">
-            <div class="form-check form-switch m-0">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                id="themeSwitch"
-                [checked]="isDarkMode"
-                (change)="toggleDarkMode($event.target.checked)"
-              />
-              <label class="form-check-label" for="themeSwitch">
-                {{ isDarkMode ? 'Modo oscuro' : 'Modo claro' }}
-              </label>
+            <div class="btn-group" role="group" aria-label="Modo de tema">
+              <input type="radio" class="btn-check" name="themeMode" id="themeAuto" autocomplete="off" [checked]="mode === 'auto'" (change)="setMode('auto')">
+              <label class="btn btn-sm btn-outline-light" for="themeAuto">Automático</label>
+
+              <input type="radio" class="btn-check" name="themeMode" id="themeLight" autocomplete="off" [checked]="mode === 'light'" (change)="setMode('light')">
+              <label class="btn btn-sm btn-outline-light" for="themeLight">Claro</label>
+
+              <input type="radio" class="btn-check" name="themeMode" id="themeDark" autocomplete="off" [checked]="mode === 'dark'" (change)="setMode('dark')">
+              <label class="btn btn-sm btn-outline-light" for="themeDark">Oscuro</label>
             </div>
           </div>
           <a href="#" class="muted">Privacidad</a>
@@ -88,24 +86,16 @@ import { DOCUMENT } from '@angular/common';
   `
 })
 export class FooterComponent implements OnInit {
-  private readonly doc = inject(DOCUMENT);
+  #theme = inject(ThemeService);
   year = new Date().getFullYear();
-  isDarkMode = false;
+  mode: 'light' | 'dark' | 'auto' = 'auto';
 
   ngOnInit(): void {
-    try {
-      const saved = localStorage.getItem('theme');
-      const theme = saved === 'dark' ? 'dark' : 'light';
-      this.isDarkMode = theme === 'dark';
-    } catch {
-      this.isDarkMode = false;
-    }
+    this.mode = this.#theme.getMode();
   }
 
-  toggleDarkMode(checked: boolean): void {
-    const theme = checked ? 'dark' : 'light';
-    this.doc.documentElement.setAttribute('data-bs-theme', theme);
-    try { localStorage.setItem('theme', theme); } catch {}
-    this.isDarkMode = checked;
+  setMode(mode: 'light' | 'dark' | 'auto'): void {
+    this.#theme.setMode(mode);
+    this.mode = mode;
   }
 }

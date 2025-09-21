@@ -12,7 +12,8 @@ import { ToastService } from '../../../core/toast.service';
   selector: 'app-product-card',
   imports: [CurrencyPipe, RouterLink, NgIf, NgClass],
   template: `
-  <div class="card h-100">
+  <div class="card h-100 position-relative">
+    <span *ngIf="product.category" class="badge rounded-pill text-bg-light position-absolute top-0 start-0 m-2 border">{{ product.category }}</span>
     <a [routerLink]="['/product', product.id]">
       <img src="/assets/pzero-1_80.jpg" class="card-img-top p-4" alt="llanta">
     </a>

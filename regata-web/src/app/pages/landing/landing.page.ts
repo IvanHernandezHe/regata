@@ -1,6 +1,7 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgFor, NgIf, AsyncPipe, SlicePipe } from '@angular/common';
+import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../core/api.service';
 import { FormsModule } from '@angular/forms';
 import { Product } from '../../core/models/product.model';
@@ -8,7 +9,7 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
 
 @Component({
   standalone: true,
-  imports: [RouterLink, NgFor, NgIf, AsyncPipe, SlicePipe, ProductCardComponent, FormsModule],
+  imports: [RouterLink, NgFor, NgIf, AsyncPipe, SlicePipe, ProductCardComponent, FormsModule, LucideAngularModule],
   styles: [`
     /* Hero */
     .hero {
@@ -78,14 +79,22 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     .coupon-card { border-radius: .75rem; border: 2px dashed #e0e0e0; background: #fff; }
     .info-split { border-radius: .75rem; border: 1px solid rgba(0,0,0,.08); background: #fff; }
 
-    /* Floating WhatsApp */
-    .floating-wa { position: fixed; right: 16px; bottom: 16px; z-index: 1050; }
-    .floating-wa .btn-wa {
-      display: inline-flex; align-items: center; gap: .5rem;
-      background: #25D366; border: none; color: #fff; padding: .75rem 1rem;
-      border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.2); text-decoration: none; font-weight: 600;
+    /* Floating FABs */
+    .floating-fabs { position: fixed; right: 16px; bottom: 16px; z-index: 1050; display: flex; flex-direction: column; gap: 10px; }
+    .fab { width: clamp(44px, 9vw, 56px); height: clamp(44px, 9vw, 56px); border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,.22); color: #fff; text-decoration: none; border: none; position: relative; }
+    .fab svg { width: 60%; height: 60%; display: block; }
+    .fab-wa { background: #25D366; }
+    .fab-help { background: var(--jdm-red); }
+    .fab:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .fab:active { transform: translateY(0); }
+    /* Hover label */
+    .fab::after {
+      content: attr(data-label);
+      position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(6px); opacity: 0;
+      background: rgba(0,0,0,.85); color: #fff; font-size: .78rem; padding: .28rem .5rem; border-radius: .5rem;
+      white-space: nowrap; pointer-events: none; transition: opacity .15s ease, transform .15s ease;
     }
-    .floating-wa svg { flex: 0 0 auto; }
+    .fab:hover::after, .fab:focus-visible::after { opacity: 1; transform: translateY(-50%); }
 
     /* Responsive tweaks */
     @media (min-width: 992px) {
@@ -444,13 +453,28 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     </div>
   </section>
 
-  <!-- Floating WhatsApp button -->
-  <div class="floating-wa">
-    <a class="btn-wa" [href]="waLink" target="_blank" rel="noopener" aria-label="WhatsApp">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20.52 3.48C18.38 1.34 15.77.2 12.99.2 6.53.2 1.3 5.43 1.3 11.89c0 2.1.55 4.1 1.61 5.89L.2 23.8l6.2-2.65c1.71.93 3.64 1.42 5.61 1.42 6.46 0 11.69-5.23 11.69-11.69 0-2.78-1.14-5.39-3.28-7.53Zm-7.53 18.1c-1.77 0-3.5-.48-5.01-1.39l-.36-.21-3.68 1.57 1.57-3.68-.22-.36a9.52 9.52 0 0 1-1.39-5c0-5.29 4.3-9.59 9.59-9.59 2.56 0 4.96.99 6.76 2.79 1.8 1.8 2.79 4.2 2.79 6.76 0 5.29-4.3 9.59-9.59 9.59Zm5.27-7.21c-.29-.15-1.72-.85-1.99-.95-.27-.1-.47-.15-.67.15-.2.29-.77.95-.94 1.14-.17.2-.35.22-.64.07-.29-.15-1.23-.45-2.34-1.43-.86-.76-1.44-1.7-1.61-1.99-.17-.29-.02-.45.13-.6.13-.13.29-.35.44-.52.15-.17.2-.29.29-.49.1-.2.05-.37-.02-.52-.07-.15-.67-1.6-.92-2.18-.24-.58-.49-.5-.67-.5-.17 0-.37-.02-.57-.02-.2 0-.52.07-.8.37-.27.29-1.04 1-1.04 2.45 0 1.44 1.06 2.83 1.21 3.02.15.2 2.08 3.17 5.03 4.45.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.72-.7 1.97-1.37.24-.67.24-1.25.17-1.37-.07-.12-.27-.2-.56-.35Z" fill="currentColor"/>
+  <!-- Floating action buttons -->
+  <div class="floating-fabs" aria-label="Acciones rápidas">
+    <a class="fab fab-help" routerLink="/ayuda" aria-label="Emergencia o ayuda" data-label="Emergencia">
+      <!-- Minimal emergency tire icon -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+        <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="12" y1="2" x2="12" y2="6" stroke="currentColor" stroke-width="2"/>
+        <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" stroke-width="2"/>
+        <line x1="2" y1="12" x2="6" y2="12" stroke="currentColor" stroke-width="2"/>
+        <line x1="18" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/>
+        <line x1="5.5" y1="5.5" x2="8.5" y2="8.5" stroke="currentColor" stroke-width="2"/>
+        <line x1="18.5" y1="18.5" x2="15.5" y2="15.5" stroke="currentColor" stroke-width="2"/>
+        <line x1="5.5" y1="18.5" x2="8.5" y2="15.5" stroke="currentColor" stroke-width="2"/>
+        <line x1="18.5" y1="5.5" x2="15.5" y2="8.5" stroke="currentColor" stroke-width="2"/>
       </svg>
-      Whatsapp
+    </a>
+    <a class="fab fab-wa" [href]="waLink" target="_blank" rel="noopener" aria-label="WhatsApp" data-label="WhatsApp">
+      <!-- Official-style WhatsApp glyph -->
+      <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M20.52 3.48A11.31 11.31 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.02.52 3.97 1.5 5.7L0 24l6.46-1.68A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.2-1.25-6.21-3.48-8.52ZM12 21.6c-1.9 0-3.75-.51-5.37-1.49l-.38-.22-3.76.98.99-3.77-.24-.39A9.59 9.59 0 1 1 21.6 12 9.6 9.6 0 0 1 12 21.6Zm5.06-6.95c-.28-.14-1.66-.83-1.92-.93-.26-.1-.45-.14-.63.14-.18.28-.74.93-.9 1.12-.16.19-.34.22-.62.07-.28-.14-1.2-.44-2.28-1.4-.84-.75-1.4-1.67-1.57-1.96-.17-.29-.02-.44.12-.59.12-.12.28-.34.42-.5.14-.16.2-.28.28-.47.1-.19.05-.35-.02-.5-.07-.15-.66-1.57-.9-2.14-.24-.56-.48-.49-.65-.49-.17 0-.36-.02-.55-.02-.2 0-.5.07-.78.36-.27.28-1.01.98-1.01 2.41 0 1.42 1.03 2.78 1.17 2.97.14.19 2.02 3.12 4.89 4.39.68.3 1.2.47 1.61.61.68.22 1.29.18 1.77.11.54-.08 1.66-.69 1.9-1.35.23-.66.23-1.23.16-1.35-.07-.12-.26-.2-.54-.34Z"/>
+      </svg>
     </a>
   </div>
   `

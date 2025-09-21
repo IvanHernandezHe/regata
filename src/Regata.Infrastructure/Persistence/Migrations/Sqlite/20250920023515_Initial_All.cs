@@ -6,11 +6,32 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
 {
     /// <inheritdoc />
-    public partial class Init_Sqlite : Migration
+    public partial class Initial_All : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "Addresses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Line1 = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Line2 = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
+                    City = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    State = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    PostalCode = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Country = table.Column<string>(type: "TEXT", maxLength: 2, nullable: false),
+                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Addresses", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -73,6 +94,20 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AuditLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Brands",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    LogoUrl = table.Column<string>(type: "TEXT", nullable: true),
+                    Active = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Brands", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -174,7 +209,17 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                     DiscountCode = table.Column<string>(type: "TEXT", nullable: true),
                     PointsEarned = table.Column<int>(type: "INTEGER", nullable: false),
                     PointsSpent = table.Column<int>(type: "INTEGER", nullable: false),
-                    CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ShipLine1 = table.Column<string>(type: "TEXT", nullable: true),
+                    ShipLine2 = table.Column<string>(type: "TEXT", nullable: true),
+                    ShipCity = table.Column<string>(type: "TEXT", nullable: true),
+                    ShipState = table.Column<string>(type: "TEXT", nullable: true),
+                    ShipPostalCode = table.Column<string>(type: "TEXT", nullable: true),
+                    ShipCountry = table.Column<string>(type: "TEXT", nullable: true),
+                    ShippingCost = table.Column<decimal>(type: "TEXT", nullable: false),
+                    ShipTrackingCarrier = table.Column<string>(type: "TEXT", nullable: true),
+                    ShipTrackingCode = table.Column<string>(type: "TEXT", nullable: true),
+                    ShippedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -182,20 +227,17 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                 });
 
             migrationBuilder.CreateTable(
-                name: "Products",
+                name: "ProductCategories",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Sku = table.Column<string>(type: "TEXT", nullable: false),
-                    Brand = table.Column<string>(type: "TEXT", nullable: false),
-                    ModelName = table.Column<string>(type: "TEXT", nullable: false),
-                    Size = table.Column<string>(type: "TEXT", nullable: false),
-                    Price = table.Column<double>(type: "REAL", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Slug = table.Column<string>(type: "TEXT", nullable: false),
                     Active = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.PrimaryKey("PK_ProductCategories", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -399,6 +441,90 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Sku = table.Column<string>(type: "TEXT", nullable: false),
+                    Brand = table.Column<string>(type: "TEXT", nullable: false),
+                    BrandId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    CategoryId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    ModelName = table.Column<string>(type: "TEXT", nullable: false),
+                    Size = table.Column<string>(type: "TEXT", nullable: false),
+                    Price = table.Column<double>(type: "REAL", nullable: false),
+                    Active = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Type = table.Column<string>(type: "TEXT", nullable: true),
+                    LoadIndex = table.Column<string>(type: "TEXT", nullable: true),
+                    SpeedRating = table.Column<string>(type: "TEXT", nullable: true),
+                    ImagesJson = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Products_Brands_BrandId",
+                        column: x => x.BrandId,
+                        principalTable: "Brands",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Products_ProductCategories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "ProductCategories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RimSpecs",
+                columns: table => new
+                {
+                    ProductId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    DiameterIn = table.Column<double>(type: "REAL", nullable: true),
+                    WidthIn = table.Column<double>(type: "REAL", nullable: true),
+                    BoltPattern = table.Column<string>(type: "TEXT", nullable: true),
+                    OffsetMm = table.Column<int>(type: "INTEGER", nullable: true),
+                    CenterBoreMm = table.Column<double>(type: "REAL", nullable: true),
+                    Material = table.Column<string>(type: "TEXT", nullable: true),
+                    Finish = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RimSpecs", x => x.ProductId);
+                    table.ForeignKey(
+                        name: "FK_RimSpecs_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TireSpecs",
+                columns: table => new
+                {
+                    ProductId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Type = table.Column<string>(type: "TEXT", nullable: true),
+                    LoadIndex = table.Column<string>(type: "TEXT", nullable: true),
+                    SpeedRating = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TireSpecs", x => x.ProductId);
+                    table.ForeignKey(
+                        name: "FK_TireSpecs_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Addresses_UserId_IsDefault",
+                table: "Addresses",
+                columns: new[] { "UserId", "IsDefault" });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -452,6 +578,12 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                 columns: new[] { "UserId", "CreatedAtUtc" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Brands_Name",
+                table: "Brands",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CartItems_CartId",
                 table: "CartItems",
                 column: "CartId");
@@ -495,6 +627,28 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProductCategories_Name",
+                table: "ProductCategories",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductCategories_Slug",
+                table: "ProductCategories",
+                column: "Slug",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_BrandId",
+                table: "Products",
+                column: "BrandId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_CategoryId",
+                table: "Products",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Products_Sku",
                 table: "Products",
                 column: "Sku",
@@ -510,6 +664,9 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Addresses");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -547,13 +704,16 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                 name: "OrderItems");
 
             migrationBuilder.DropTable(
-                name: "Products");
-
-            migrationBuilder.DropTable(
                 name: "RewardAccounts");
 
             migrationBuilder.DropTable(
                 name: "RewardTransactions");
+
+            migrationBuilder.DropTable(
+                name: "RimSpecs");
+
+            migrationBuilder.DropTable(
+                name: "TireSpecs");
 
             migrationBuilder.DropTable(
                 name: "Wishlist");
@@ -569,6 +729,15 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
 
             migrationBuilder.DropTable(
                 name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Brands");
+
+            migrationBuilder.DropTable(
+                name: "ProductCategories");
         }
     }
 }

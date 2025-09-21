@@ -14,8 +14,20 @@
   <script>
     (function () {
       try {
-        var saved = localStorage.getItem('theme');
-        var theme = saved === 'dark' ? 'dark' : 'light';
+        var mode = localStorage.getItem('regata_theme_mode');
+        // Backward-compat: honor legacy 'theme' if new key absent
+        if (!mode) {
+          var legacy = localStorage.getItem('theme');
+          if (legacy === 'dark' || legacy === 'light') mode = legacy;
+        }
+        var theme;
+        if (mode === 'dark') theme = 'dark';
+        else if (mode === 'light') theme = 'light';
+        else {
+          // "auto" (default): simple time-based heuristic to avoid FOUC before app boot
+          var h = new Date().getHours();
+          theme = (h < 6 || h >= 19) ? 'dark' : 'light';
+        }
         document.documentElement.setAttribute('data-bs-theme', theme);
       } catch (e) { /* no-op */ }
     })();

@@ -49,6 +49,10 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
     public DbSet<InventoryItem> Inventory => Set<InventoryItem>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<InventoryReservation> InventoryReservations => Set<InventoryReservation>();
+    public DbSet<Brand> Brands => Set<Brand>();
+    public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
+    public DbSet<TireSpecs> TireSpecs => Set<TireSpecs>();
+    public DbSet<RimSpecs> RimSpecs => Set<RimSpecs>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -60,6 +64,41 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
             e.HasKey(p => p.Id);
             e.Property(p => p.Price).HasConversion<double>();
             e.HasIndex(p => p.Sku).IsUnique();
+            e.HasOne<Brand>()
+                .WithMany()
+                .HasForeignKey(p => p.BrandId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<ProductCategory>()
+                .WithMany()
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+        b.Entity<Brand>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Name).IsUnique();
+        });
+        b.Entity<ProductCategory>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Slug).IsUnique();
+            e.HasIndex(x => x.Name).IsUnique();
+        });
+        b.Entity<TireSpecs>(e =>
+        {
+            e.HasKey(x => x.ProductId);
+            e.HasOne<Product>()
+                .WithOne()
+                .HasForeignKey<TireSpecs>(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<RimSpecs>(e =>
+        {
+            e.HasKey(x => x.ProductId);
+            e.HasOne<Product>()
+                .WithOne()
+                .HasForeignKey<RimSpecs>(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
         b.Entity<Order>(e =>
         {

@@ -34,6 +34,13 @@ public static class DataSeeder
             foreach (var s in toAdd)
             {
                 var p = new Product(s.sku, s.brand, s.model, s.size, s.price);
+                // demo specs/images via reflection
+                var t = typeof(Product);
+                t.GetProperty(nameof(Product.Type))?.SetValue(p, s.size.Contains("R") && s.size.Contains("70") ? "CAMIONETA" : "AUTO");
+                t.GetProperty(nameof(Product.LoadIndex))?.SetValue(p, "107(975Kg.)");
+                t.GetProperty(nameof(Product.SpeedRating))?.SetValue(p, "H (210Km/hr)");
+                var imgs = System.Text.Json.JsonSerializer.Serialize(new[] { "/assets/pzero-1_80.jpg", "/assets/pzero-1_80.jpg", "/assets/pzero-1_80.jpg" });
+                t.GetProperty(nameof(Product.ImagesJson))?.SetValue(p, imgs);
                 newProducts.Add(p);
                 db.Products.Add(p);
             }
@@ -48,6 +55,79 @@ public static class DataSeeder
             }
             await db.SaveChangesAsync();
         }
+
+        // Ensure brands table populated and link BrandId on products (idempotente)
+        var distinctBrands = await db.Products.AsNoTracking().Select(p => p.Brand).Distinct().ToListAsync();
+        foreach (var name in distinctBrands)
+        {
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            var b = await db.Brands.FirstOrDefaultAsync(x => x.Name == name);
+            if (b is null)
+            {
+                b = new Regata.Domain.Products.Brand(name, name.Equals("Regata", StringComparison.OrdinalIgnoreCase) ? "/assets/brand/regata-mark2.svg" : null);
+                db.Brands.Add(b);
+                await db.SaveChangesAsync();
+            }
+            // Link products missing BrandId
+            await db.Products.Where(p => p.Brand == name && p.BrandId == null).ExecuteUpdateAsync(u => u.SetProperty(x => x.BrandId, b.Id));
+        }
+
+        // Ensure default categories and link existing as Llantas
+        var tires = await db.ProductCategories.FirstOrDefaultAsync(c => c.Slug == "llantas")
+                    ?? (db.ProductCategories.Add(new ProductCategory("Llantas", "llantas")).Entity);
+        var rims = await db.ProductCategories.FirstOrDefaultAsync(c => c.Slug == "rines")
+                   ?? (db.ProductCategories.Add(new ProductCategory("Rines", "rines")).Entity);
+        await db.SaveChangesAsync();
+        await db.Products.Where(p => p.CategoryId == null).ExecuteUpdateAsync(u => u.SetProperty(x => x.CategoryId, tires!.Id));
+
+        // Seed demo RIM products if missing
+        var rimSeeds = new (string sku, string brand, string model, string size, decimal price, int stock,
+                            double dia, double width, string pattern, int offset, double cbore, string material, string finish)[]
+        {
+            ("RIM-ENK-18X8-5X114.3-45", "Enkei", "TS-5", "18x8 5x114.3 ET45", 3599m, 12, 18, 8, "5x114.3", 45, 66.1, "Aluminio", "Negro satinado"),
+            ("RIM-REG-17X7.5-5X112-35", "Regata", "StreetFlow", "17x7.5 5x112 ET35", 2799m, 20, 17, 7.5, "5x112", 35, 66.6, "Aluminio", "Gris"),
+        };
+        foreach (var r in rimSeeds)
+        {
+            if (!await db.Products.AnyAsync(p => p.Sku == r.sku))
+            {
+                var p = new Product(r.sku, r.brand, r.model, r.size, r.price);
+                typeof(Product).GetProperty(nameof(Product.ImagesJson))?.SetValue(p, System.Text.Json.JsonSerializer.Serialize(new[] { "/assets/pzero-1_80.jpg" }));
+                db.Products.Add(p);
+                await db.SaveChangesAsync();
+                // Link brand and category
+                var brand = await db.Brands.FirstOrDefaultAsync(b => b.Name == r.brand) ?? (db.Brands.Add(new Regata.Domain.Products.Brand(r.brand)).Entity);
+                await db.SaveChangesAsync();
+                await db.Products.Where(x => x.Id == p.Id).ExecuteUpdateAsync(u => u
+                    .SetProperty(x => x.BrandId, brand.Id)
+                    .SetProperty(x => x.CategoryId, rims.Id));
+                // Create RimSpecs
+                db.RimSpecs.Add(new Regata.Domain.Products.RimSpecs(p.Id, r.dia, r.width, r.pattern, r.offset, r.cbore, r.material, r.finish));
+                // Inventory
+                db.Inventory.Add(new InventoryItem(p.Id, r.stock));
+                db.InventoryTransactions.Add(new InventoryTransaction(p.Id, r.stock, InventoryTxnType.Receive, "seed"));
+                await db.SaveChangesAsync();
+            }
+        }
+
+        // Backfill TireSpecs and images for existing products
+        var tiresList = await db.Products.AsNoTracking().Select(x => new { x.Id, x.Size }).ToListAsync();
+        var existingTireIds = await db.TireSpecs.AsNoTracking().Select(t => t.ProductId).ToListAsync();
+        foreach (var p in tiresList)
+        {
+            if (!existingTireIds.Contains(p.Id))
+            {
+                db.TireSpecs.Add(new Regata.Domain.Products.TireSpecs(p.Id, "AUTO", "107(975Kg.)", "H (210Km/hr)"));
+            }
+        }
+        await db.SaveChangesAsync();
+        var productsNoImages = await db.Products.Where(p => p.ImagesJson == null).ToListAsync();
+        foreach (var p in productsNoImages)
+        {
+            var imgs = System.Text.Json.JsonSerializer.Serialize(new[] { "/assets/pzero-1_80.jpg", "/assets/pzero-1_80.jpg", "/assets/pzero-1_80.jpg" });
+            typeof(Product).GetProperty(nameof(Product.ImagesJson))?.SetValue(p, imgs);
+        }
+        if (productsNoImages.Count > 0) await db.SaveChangesAsync();
 
         // initialize inventory row for any product that still lacks inventory (0 qty placeholder)
         var missing = await db.Products.AsNoTracking()

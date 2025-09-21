@@ -5,7 +5,16 @@ type ThemeMode = 'light' | 'dark' | 'auto';
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private storageKey = 'regata_theme_mode';
-  private mode: ThemeMode = (localStorage.getItem(this.storageKey) as ThemeMode) || 'auto';
+  // Prefer new key; fall back to legacy 'theme' if present; default to 'auto'
+  private mode: ThemeMode = (() => {
+    try {
+      const m = localStorage.getItem(this.storageKey) as ThemeMode | null;
+      if (m === 'dark' || m === 'light' || m === 'auto') return m;
+      const legacy = localStorage.getItem('theme');
+      if (legacy === 'dark' || legacy === 'light') return legacy as ThemeMode;
+    } catch {}
+    return 'auto';
+  })();
   private sunrise: Date | null = null;
   private sunset: Date | null = null;
   private timer: any = null;
@@ -23,12 +32,20 @@ export class ThemeService {
     if (mode === 'auto') this.scheduleAuto();
   }
 
+  // Expose current mode for UI
+  getMode(): ThemeMode {
+    return this.mode;
+  }
+
+  // Compute which theme should be active based on mode (without applying it)
+  currentTheme(): 'light' | 'dark' {
+    if (this.mode === 'dark') return 'dark';
+    if (this.mode === 'light') return 'light';
+    return this.isNightNow() ? 'dark' : 'light';
+  }
+
   private applyCurrent() {
-    let dark = false;
-    if (this.mode === 'dark') dark = true;
-    else if (this.mode === 'light') dark = false;
-    else dark = this.isNightNow();
-    this.setHtmlTheme(dark ? 'dark' : 'light');
+    this.setHtmlTheme(this.currentTheme());
   }
 
   private setHtmlTheme(theme: 'light'|'dark') {
@@ -159,4 +176,3 @@ export class ThemeService {
   private deg2rad(d: number) { return (d * Math.PI) / 180; }
   private rad2deg(r: number) { return (r * 180) / Math.PI; }
 }
-

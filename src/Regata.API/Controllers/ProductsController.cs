@@ -15,9 +15,9 @@ public class ProductsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> Get([FromQuery] string? q)
+    public async Task<IActionResult> Get([FromQuery] string? q, [FromQuery] string? category)
     {
-        var items = await _svc.SearchAsync(q, 50, HttpContext.RequestAborted);
+        var items = await _svc.SearchAsync(q, category, 50, HttpContext.RequestAborted);
         return Ok(items);
     }
 

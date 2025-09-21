@@ -578,6 +578,15 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                     b.Property<string>("ShipState")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ShipTrackingCarrier")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ShipTrackingCode")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ShippedAtUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("ShippingCost")
                         .HasColumnType("TEXT");
 
@@ -637,6 +646,30 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                     b.ToTable("OrderItems");
                 });
 
+            modelBuilder.Entity("Regata.Domain.Products.Brand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LogoUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Brands");
+                });
+
             modelBuilder.Entity("Regata.Domain.Products.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -648,6 +681,18 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
 
                     b.Property<string>("Brand")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("BrandId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImagesJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LoadIndex")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ModelName")
@@ -665,12 +710,100 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SpeedRating")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("BrandId");
+
+                    b.HasIndex("CategoryId");
 
                     b.HasIndex("Sku")
                         .IsUnique();
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("Regata.Domain.Products.ProductCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("Regata.Domain.Products.RimSpecs", b =>
+                {
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BoltPattern")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("CenterBoreMm")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("DiameterIn")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Finish")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Material")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("OffsetMm")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("WidthIn")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("ProductId");
+
+                    b.ToTable("RimSpecs");
+                });
+
+            modelBuilder.Entity("Regata.Domain.Products.TireSpecs", b =>
+                {
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LoadIndex")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SpeedRating")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ProductId");
+
+                    b.ToTable("TireSpecs");
                 });
 
             modelBuilder.Entity("Regata.Domain.Rewards.RewardAccount", b =>
@@ -821,6 +954,37 @@ namespace Regata.Infrastructure.Persistence.Migrations.Sqlite
                     b.HasOne("Regata.Domain.Orders.Order", null)
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Regata.Domain.Products.Product", b =>
+                {
+                    b.HasOne("Regata.Domain.Products.Brand", null)
+                        .WithMany()
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Regata.Domain.Products.ProductCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Regata.Domain.Products.RimSpecs", b =>
+                {
+                    b.HasOne("Regata.Domain.Products.Product", null)
+                        .WithOne()
+                        .HasForeignKey("Regata.Domain.Products.RimSpecs", "ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Regata.Domain.Products.TireSpecs", b =>
+                {
+                    b.HasOne("Regata.Domain.Products.Product", null)
+                        .WithOne()
+                        .HasForeignKey("Regata.Domain.Products.TireSpecs", "ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
