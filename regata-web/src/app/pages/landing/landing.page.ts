@@ -83,8 +83,9 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     .floating-fabs { position: fixed; right: 16px; bottom: 16px; z-index: 1050; display: flex; flex-direction: column; gap: 10px; }
     .fab { width: clamp(44px, 9vw, 56px); height: clamp(44px, 9vw, 56px); border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(0,0,0,.22); color: #fff; text-decoration: none; border: none; position: relative; }
     .fab svg { width: 60%; height: 60%; display: block; }
-    .fab-wa { background: #25D366; }
     .fab-help { background: var(--jdm-red); }
+    .fab-call { background: #0d6efd; }
+    .fab-wa { background: #25D366; }
     .fab:hover { filter: brightness(1.05); transform: translateY(-1px); }
     .fab:active { transform: translateY(0); }
     /* Hover label */
@@ -438,7 +439,7 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
         </div>
         <div>
           <div class="fw-bold">Tel:</div>
-          <a href="tel:5555555555" class="text-decoration-none">(55) 5555 5555</a>
+          <a [href]="'tel:' + supportPhone" class="text-decoration-none">{{ supportPhoneDisplay }}</a>
         </div>
         <div>
           <div class="fw-bold">Correo:</div>
@@ -456,19 +457,22 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
   <!-- Floating action buttons -->
   <div class="floating-fabs" aria-label="Acciones rápidas">
     <a class="fab fab-help" routerLink="/ayuda" aria-label="Emergencia o ayuda" data-label="Emergencia">
-      <!-- Minimal emergency tire icon -->
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
-        <circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/>
-        <line x1="12" y1="2" x2="12" y2="6" stroke="currentColor" stroke-width="2"/>
-        <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" stroke-width="2"/>
-        <line x1="2" y1="12" x2="6" y2="12" stroke="currentColor" stroke-width="2"/>
-        <line x1="18" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/>
-        <line x1="5.5" y1="5.5" x2="8.5" y2="8.5" stroke="currentColor" stroke-width="2"/>
-        <line x1="18.5" y1="18.5" x2="15.5" y2="15.5" stroke="currentColor" stroke-width="2"/>
-        <line x1="5.5" y1="18.5" x2="8.5" y2="15.5" stroke="currentColor" stroke-width="2"/>
-        <line x1="18.5" y1="5.5" x2="15.5" y2="8.5" stroke="currentColor" stroke-width="2"/>
+      <!-- Wheel/tire icon with double rim and five spokes -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+        <circle cx="12" cy="12" r="5.5" stroke="currentColor" stroke-width="2"/>
+        <g fill="currentColor">
+          <path d="M10.856 6.62 L12 12 L13.144 6.62 Z"/>
+          <path d="M16.763 9.25 L12 12 L17.47 11.425 Z"/>
+          <path d="M16.087 15.68 L12 12 L14.237 17.025 Z"/>
+          <path d="M9.763 17.025 L12 12 L7.913 15.68 Z"/>
+          <path d="M6.53 11.425 L12 12 L7.237 9.25 Z"/>
+        </g>
+        <circle cx="12" cy="12" r="1.7" fill="currentColor"/>
       </svg>
+    </a>
+    <a class="fab fab-call" [href]="'tel:' + supportPhone" aria-label="Llámanos" data-label="Llámanos">
+      <lucide-icon name="phone" size="22" [strokeWidth]="2.4" aria-hidden="true"></lucide-icon>
     </a>
     <a class="fab fab-wa" [href]="waLink" target="_blank" rel="noopener" aria-label="WhatsApp" data-label="WhatsApp">
       <!-- Official-style WhatsApp glyph -->
@@ -485,6 +489,8 @@ export class LandingPage implements OnDestroy {
   products$ = this.api.getProducts();
   readonly waNumber = '5215555555555';
   readonly waLink = `https://wa.me/${this.waNumber}?text=${encodeURIComponent('Hola, quiero una cotización de llantas')}`;
+  readonly supportPhone = '5555555555';
+  readonly supportPhoneDisplay = '(55) 5555 5555';
 
   // Carousel state
   slides = [

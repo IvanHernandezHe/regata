@@ -74,6 +74,7 @@ import { WishlistStore } from '../../../state/wishlist.store';
           <li class="nav-item"><a class="nav-link" routerLinkActive="active" routerLink="/shop" (click)="closeMenuOnSmall()">Tienda</a></li>
           <li class="nav-item"><a class="nav-link" routerLinkActive="active" routerLink="/nosotros" (click)="closeMenuOnSmall()">Nosotros</a></li>
           <li class="nav-item"><a class="nav-link" routerLinkActive="active" routerLink="/servicios" (click)="closeMenuOnSmall()">Servicios</a></li>
+          <li class="nav-item"><a class="nav-link" routerLinkActive="active" routerLink="/ayuda" (click)="closeMenuOnSmall()">Emergencia</a></li>
           <li class="nav-item"><a class="nav-link" routerLinkActive="active" routerLink="/blog" (click)="closeMenuOnSmall()">Blog</a></li>
           <!-- Auth links visible on mobile menu -->
           <li class="nav-item d-lg-none" *ngIf="!auth.isAuthenticated()"><a class="nav-link" [routerLink]="['/auth']" [queryParams]="{ login: 1 }" (click)="closeMenuOnSmall()">Iniciar sesión</a></li>

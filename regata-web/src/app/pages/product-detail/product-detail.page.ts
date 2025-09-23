@@ -138,7 +138,7 @@ import { WishlistStore } from '../../state/wishlist.store';
             <span>Comprar ahora</span>
           </button>
           <button class="btn btn-outline-secondary btn-ico" *ngIf="auth.isAuthenticated()" (click)="saveForLater()">
-            <lucide-icon name="bookmark" size="18" [strokeWidth]="2.5" aria-hidden="true"></lucide-icon>
+            <lucide-icon name="heart" size="18" [strokeWidth]="2.5" aria-hidden="true"></lucide-icon>
             <span>Guardar</span>
           </button>
         </div>

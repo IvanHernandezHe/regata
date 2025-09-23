@@ -12,8 +12,13 @@ import { LucideAngularModule } from 'lucide-angular';
     @media (min-width: 768px) { .help-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
     .help-tile { padding: 1rem; display: flex; gap: .8rem; align-items: center; }
     .help-tile lucide-icon { color: var(--jdm-red); }
+    .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex: 0 0 22px; color: var(--jdm-red); }
+    .help-icon svg { width: 100%; height: 100%; }
     .contact { display: grid; gap: .5rem; }
     .contact a { text-decoration: none; }
+    .contact-item { display: flex; align-items: center; gap: .6rem; }
+    .contact-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; color: var(--jdm-red); }
+    .contact-icon svg { width: 100%; height: 100%; }
     /* Dark theme */
     :host-context([data-bs-theme="dark"]) .card { background: #0f0f0f; border-color: #2a2a2a; }
   `],
@@ -25,7 +30,20 @@ import { LucideAngularModule } from 'lucide-angular';
     <div class="card p-3 mb-3">
       <div class="help-grid">
         <div class="help-tile">
-          <lucide-icon name="life-buoy" size="22" [strokeWidth]="2.5" aria-hidden="true"></lucide-icon>
+          <span class="help-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" focusable="false">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="5.5" stroke="currentColor" stroke-width="2"/>
+              <g fill="currentColor">
+                <path d="M10.856 6.62 L12 12 L13.144 6.62 Z"/>
+                <path d="M16.763 9.25 L12 12 L17.47 11.425 Z"/>
+                <path d="M16.087 15.68 L12 12 L14.237 17.025 Z"/>
+                <path d="M9.763 17.025 L12 12 L7.913 15.68 Z"/>
+                <path d="M6.53 11.425 L12 12 L7.237 9.25 Z"/>
+              </g>
+              <circle cx="12" cy="12" r="1.7" fill="currentColor"/>
+            </svg>
+          </span>
           <div>
             <div class="fw-semibold">Asistencia inmediata</div>
             <small class="text-muted">¿Neumático dañado? Contáctanos ahora.</small>
@@ -39,7 +57,9 @@ import { LucideAngularModule } from 'lucide-angular';
           </div>
         </div>
         <div class="help-tile">
-          <lucide-icon name="phone" size="22" [strokeWidth]="2.5" aria-hidden="true"></lucide-icon>
+          <span class="help-icon" aria-hidden="true">
+            <lucide-icon name="phone" size="22" [strokeWidth]="2.4"></lucide-icon>
+          </span>
           <div>
             <div class="fw-semibold">Llámanos</div>
             <small class="text-muted">Horario: 9:00–18:00 hrs.</small>
@@ -53,7 +73,12 @@ import { LucideAngularModule } from 'lucide-angular';
         <div class="card p-3 h-100">
           <h2 class="h6">Contactos</h2>
           <div class="contact">
-            <div><span class="text-muted">Teléfono: </span><a href="tel:5555555555">(55) 5555 5555</a></div>
+            <div class="contact-item">
+              <span class="contact-icon" aria-hidden="true">
+                <lucide-icon name="phone" size="20" [strokeWidth]="2.4"></lucide-icon>
+              </span>
+              <div><span class="text-muted">Teléfono: </span><a [href]="'tel:' + supportPhone">{{ supportPhoneDisplay }}</a></div>
+            </div>
             <div><span class="text-muted">WhatsApp: </span><a [href]="waLink" target="_blank" rel="noopener">Escríbenos</a></div>
             <div><span class="text-muted">Correo: </span><a href="mailto:hola@regata.mx">hola@regata.mx</a></div>
           </div>
@@ -76,4 +101,6 @@ import { LucideAngularModule } from 'lucide-angular';
 export class AyudaPage {
   readonly waNumber = '5215555555555';
   readonly waLink = `https://wa.me/${this.waNumber}?text=${encodeURIComponent('Hola, necesito ayuda con mis llantas')}`;
+  readonly supportPhone = '5555555555';
+  readonly supportPhoneDisplay = '(55) 5555 5555';
 }

@@ -2,7 +2,7 @@ import { ApplicationConfig, importProvidersFrom, provideBrowserGlobalErrorListen
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { LucideAngularModule, ShoppingCart, User, Search, X, Heart, Bookmark, Zap, CreditCard, MessageCircle, LifeBuoy } from 'lucide-angular';
+import { LucideAngularModule, ShoppingCart, User, Search, X, Heart, Bookmark, Zap, CreditCard, MessageCircle, LifeBuoy, Phone } from 'lucide-angular';
 
 
 
@@ -22,6 +22,6 @@ export const appConfig: ApplicationConfig = {
         }
       ])
     ),
-    importProvidersFrom(LucideAngularModule.pick({ ShoppingCart, User, Search, X, Heart, Bookmark, Zap, CreditCard, MessageCircle, LifeBuoy })),
+    importProvidersFrom(LucideAngularModule.pick({ ShoppingCart, User, Search, X, Heart, Bookmark, Zap, CreditCard, MessageCircle, LifeBuoy, Phone })),
   ]
 };
