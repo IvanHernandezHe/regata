@@ -30,7 +30,6 @@ public static class DataSeeder
         var toAdd = seeds.Where(s => !existingSkus.Contains(s.sku)).ToList();
         if (toAdd.Count > 0)
         {
-            var newProducts = new List<Product>();
             foreach (var s in toAdd)
             {
                 var p = new Product(s.sku, s.brand, s.model, s.size, s.price);
@@ -41,7 +40,6 @@ public static class DataSeeder
                 t.GetProperty(nameof(Product.SpeedRating))?.SetValue(p, "H (210Km/hr)");
                 var imgs = System.Text.Json.JsonSerializer.Serialize(new[] { "/assets/pzero-1_80.jpg", "/assets/pzero-1_80.jpg", "/assets/pzero-1_80.jpg" });
                 t.GetProperty(nameof(Product.ImagesJson))?.SetValue(p, imgs);
-                newProducts.Add(p);
                 db.Products.Add(p);
             }
             await db.SaveChangesAsync();

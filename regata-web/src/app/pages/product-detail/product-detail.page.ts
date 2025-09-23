@@ -150,17 +150,17 @@ import { WishlistStore } from '../../state/wishlist.store';
               <tr><th>Modelo</th><td>{{ product!.modelName }}</td></tr>
               <tr><th>Tamaño</th><td>{{ product!.size }}</td></tr>
               <tr><th>Categoría</th><td>{{ product!.category || '—' }}</td></tr>
-              <tr *ngIf="product!.tire"><th>Tipo</th><td>{{ product!.tire?.type || '—' }}</td></tr>
-              <tr *ngIf="product!.tire"><th>Rango carga</th><td>{{ product!.tire?.loadIndex || '—' }}</td></tr>
-              <tr *ngIf="product!.tire"><th>Rango Velocidad</th><td>{{ product!.tire?.speedRating || '—' }}</td></tr>
+              <tr *ngIf="product!.tire"><th>Tipo</th><td>{{ product!.tire.type || '—' }}</td></tr>
+              <tr *ngIf="product!.tire"><th>Rango carga</th><td>{{ product!.tire.loadIndex || '—' }}</td></tr>
+              <tr *ngIf="product!.tire"><th>Rango Velocidad</th><td>{{ product!.tire.speedRating || '—' }}</td></tr>
               <ng-container *ngIf="product!.rim">
-                <tr><th>Diámetro</th><td>{{ product!.rim?.diameterIn || '—' }} in</td></tr>
-                <tr><th>Ancho</th><td>{{ product!.rim?.widthIn || '—' }} in</td></tr>
-                <tr><th>Patrón</th><td>{{ product!.rim?.boltPattern || '—' }}</td></tr>
-                <tr><th>Offset</th><td>{{ product!.rim?.offsetMm || '—' }} mm</td></tr>
-                <tr><th>Centro</th><td>{{ product!.rim?.centerBoreMm || '—' }} mm</td></tr>
-                <tr><th>Material</th><td>{{ product!.rim?.material || '—' }}</td></tr>
-                <tr><th>Acabado</th><td>{{ product!.rim?.finish || '—' }}</td></tr>
+                <tr><th>Diámetro</th><td>{{ product!.rim.diameterIn || '—' }} in</td></tr>
+                <tr><th>Ancho</th><td>{{ product!.rim.widthIn || '—' }} in</td></tr>
+                <tr><th>Patrón</th><td>{{ product!.rim.boltPattern || '—' }}</td></tr>
+                <tr><th>Offset</th><td>{{ product!.rim.offsetMm || '—' }} mm</td></tr>
+                <tr><th>Centro</th><td>{{ product!.rim.centerBoreMm || '—' }} mm</td></tr>
+                <tr><th>Material</th><td>{{ product!.rim.material || '—' }}</td></tr>
+                <tr><th>Acabado</th><td>{{ product!.rim.finish || '—' }}</td></tr>
               </ng-container>
               <tr><th>Ancho</th><td>{{ parsed().width || '—' }}</td></tr>
               <tr><th>Alto</th><td>{{ parsed().aspect || '—' }}</td></tr>

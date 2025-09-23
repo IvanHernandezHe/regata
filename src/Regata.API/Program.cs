@@ -2,6 +2,7 @@ using Regata.API.Extensions;
 using Regata.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Regata.API.Middleware;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -48,6 +49,15 @@ app.MapGroup("/api/auth").MapIdentityApi<Microsoft.AspNetCore.Identity.IdentityU
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var cfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var resetFlag = cfg["Database:ResetOnStart"];
+    var envReset = Environment.GetEnvironmentVariable("RESET_DB");
+    if (string.Equals(resetFlag, "true", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(envReset, "true", StringComparison.OrdinalIgnoreCase))
+    {
+        // Development convenience: drop and recreate database from migrations
+        await db.Database.EnsureDeletedAsync();
+    }
     await db.Database.MigrateAsync();
     await Regata.Infrastructure.Seed.DataSeeder.SeedAsync(scope.ServiceProvider);
 }

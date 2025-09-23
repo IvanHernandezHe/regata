@@ -1,11 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { AdminBrandsService, AdminBrand } from '../../core/admin-brands.service';
-import { NgFor } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   standalone: true,
-  imports: [NgFor, FormsModule],
+  imports: [NgFor, NgIf, FormsModule],
   template: `
   <section class="container my-4">
     <h2>Marcas</h2>
