@@ -79,8 +79,18 @@ import { LucideAngularModule } from 'lucide-angular';
               </span>
               <div><span class="text-muted">Teléfono: </span><a [href]="'tel:' + supportPhone">{{ supportPhoneDisplay }}</a></div>
             </div>
-            <div><span class="text-muted">WhatsApp: </span><a [href]="waLink" target="_blank" rel="noopener">Escríbenos</a></div>
-            <div><span class="text-muted">Correo: </span><a href="mailto:hola@regata.mx">hola@regata.mx</a></div>
+            <div class="contact-item">
+              <span class="contact-icon" aria-hidden="true">
+                <lucide-icon name="message-circle" size="20" [strokeWidth]="2.4"></lucide-icon>
+              </span>
+              <div><span class="text-muted">WhatsApp: </span><a [href]="waLink" target="_blank" rel="noopener">Escríbenos</a></div>
+            </div>
+            <div class="contact-item">
+              <span class="contact-icon" aria-hidden="true">
+                <lucide-icon name="mail" size="20" [strokeWidth]="2.4"></lucide-icon>
+              </span>
+              <div><span class="text-muted">Correo: </span><a href="mailto:hola@regata.mx">hola@regata.mx</a></div>
+            </div>
           </div>
         </div>
       </div>
