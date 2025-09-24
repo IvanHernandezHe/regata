@@ -19,6 +19,11 @@ import { LucideAngularModule } from 'lucide-angular';
     .contact-item { display: flex; align-items: center; gap: .6rem; }
     .contact-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; color: var(--jdm-red); }
     .contact-icon svg { width: 100%; height: 100%; }
+    .tips-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+    .tip-item { display: flex; align-items: flex-start; gap: .65rem; padding: .65rem .85rem; border-radius: .65rem; background: rgba(225,75,75,.08); border: 1px solid rgba(225,75,75,.18); }
+    .tip-icon { display: inline-flex; width: 22px; height: 22px; color: var(--jdm-red); flex: 0 0 22px; align-items: center; justify-content: center; }
+    .tip-icon lucide-icon { width: 100%; height: 100%; }
+    :host-context([data-bs-theme='dark']) .tip-item { background: rgba(225,75,75,.14); border-color: rgba(225,75,75,.28); }
     /* Dark theme */
     :host-context([data-bs-theme="dark"]) .card { background: #0f0f0f; border-color: #2a2a2a; }
   `],
@@ -97,10 +102,19 @@ import { LucideAngularModule } from 'lucide-angular';
       <div class="col-12 col-md-6">
         <div class="card p-3 h-100">
           <h2 class="h6">Consejos rápidos</h2>
-          <ul class="m-0 ps-3 small">
-            <li>Evita circular si detectas daño severo en la llanta.</li>
-            <li>Revisa la presión de todas las llantas antes de continuar.</li>
-            <li>Comparte tu ubicación al contactar soporte para una atención más rápida.</li>
+          <ul class="tips-list">
+            <li class="tip-item">
+              <span class="tip-icon"><lucide-icon name="alert-triangle" size="18" [strokeWidth]="2.4"></lucide-icon></span>
+              <div class="small">Evita circular si detectas daño severo en la llanta.</div>
+            </li>
+            <li class="tip-item">
+              <span class="tip-icon"><lucide-icon name="gauge" size="18" [strokeWidth]="2.4"></lucide-icon></span>
+              <div class="small">Revisa la presión de todas las llantas antes de continuar.</div>
+            </li>
+            <li class="tip-item">
+              <span class="tip-icon"><lucide-icon name="map-pin" size="18" [strokeWidth]="2.4"></lucide-icon></span>
+              <div class="small">Comparte tu ubicación al contactar soporte para una atención más rápida.</div>
+            </li>
           </ul>
         </div>
       </div>

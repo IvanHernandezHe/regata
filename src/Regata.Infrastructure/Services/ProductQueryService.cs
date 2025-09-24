@@ -14,27 +14,34 @@ public sealed class ProductQueryService : IProductQueryService
     public async Task<IReadOnlyList<ProductListItemDto>> SearchAsync(string? q, string? category = null, int take = 50, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
-        var baseQuery = _db.Products.AsNoTracking().Where(p => p.Active);
-        if (!string.IsNullOrWhiteSpace(q))
-            baseQuery = baseQuery.Where(p => p.Brand.Contains(q) || p.ModelName.Contains(q) || p.Sku.Contains(q));
-
-        var list = await (
-            from p in baseQuery
-            join br in _db.Brands.AsNoTracking() on p.BrandId equals br.Id into bjoin
-            from b in bjoin.DefaultIfEmpty()
+        var query =
+            from p in _db.Products.AsNoTracking().Where(p => p.Active)
+            join br in _db.Brands.AsNoTracking() on p.BrandId equals br.Id
             join cat in _db.ProductCategories.AsNoTracking() on p.CategoryId equals cat.Id into cjoin
             from c in cjoin.DefaultIfEmpty()
-            join i in _db.Inventory.AsNoTracking() on p.Id equals i.ProductId into invJoin
+            join inv in _db.Inventory.AsNoTracking() on p.Id equals inv.ProductId into invJoin
             from inv in invJoin.DefaultIfEmpty()
+            select new { Product = p, Brand = br, Category = c, Inventory = inv };
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            query = query.Where(row => row.Brand.Name.Contains(q) || row.Product.ModelName.Contains(q) || row.Product.Sku.Contains(q));
+        }
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            query = query.Where(row => row.Category != null && (row.Category.Slug == category || row.Category.Name == category));
+        }
+
+        var list = await (
+            from row in query
             let reserved = (_db.InventoryReservations
-                .Where(r => r.ProductId == p.Id && r.Status == ReservationStatus.Active && r.ExpiresAtUtc > now)
+                .Where(r => r.ProductId == row.Product.Id && r.Status == ReservationStatus.Active && r.ExpiresAtUtc > now)
                 .Sum(r => (int?)r.Quantity)) ?? 0
-            let onHand = inv == null ? 0 : inv.OnHand
+            let onHand = row.Inventory == null ? 0 : row.Inventory.OnHand
             let stock = (onHand - reserved) < 0 ? 0 : (onHand - reserved)
-            let brandName = b != null ? b.Name : p.Brand
-            where string.IsNullOrEmpty(category) || (c != null && (c.Slug == category || c.Name == category))
-            orderby brandName
-            select new ProductListItemDto(p.Id, p.Sku, brandName!, p.ModelName, p.Size, p.Price, p.Active, stock, c != null ? c.Name : null)
+            orderby row.Brand.Name
+            select new ProductListItemDto(row.Product.Id, row.Product.Sku, row.Brand.Name, row.Product.ModelName, row.Product.Size, row.Product.Price, row.Product.Active, stock, row.Category != null ? row.Category.Name : null)
         ).Take(take).ToListAsync(ct);
         return list;
     }
@@ -44,40 +51,33 @@ public sealed class ProductQueryService : IProductQueryService
         var now = DateTime.UtcNow;
         var row = await (
             from p in _db.Products.AsNoTracking().Where(x => x.Id == id && x.Active)
-            join br in _db.Brands.AsNoTracking() on p.BrandId equals br.Id into bjoin
-            from b in bjoin.DefaultIfEmpty()
+            join br in _db.Brands.AsNoTracking() on p.BrandId equals br.Id
             join cat in _db.ProductCategories.AsNoTracking() on p.CategoryId equals cat.Id into cjoin
             from c in cjoin.DefaultIfEmpty()
-            join i in _db.Inventory.AsNoTracking() on p.Id equals i.ProductId into invJoin
+            join inv in _db.Inventory.AsNoTracking() on p.Id equals inv.ProductId into invJoin
             from inv in invJoin.DefaultIfEmpty()
-            let reserved = (_db.InventoryReservations
-                .Where(r => r.ProductId == p.Id && r.Status == ReservationStatus.Active && r.ExpiresAtUtc > now)
-                .Sum(r => (int?)r.Quantity)) ?? 0
-            let onHand = inv == null ? 0 : inv.OnHand
-            let stock = (onHand - reserved) < 0 ? 0 : (onHand - reserved)
-            select new {
-                p.Id, p.Sku, Brand = (string?)(b != null ? b.Name : p.Brand), p.ModelName, p.Size, p.Price, p.Active,
-                Stock = stock,
-                BrandLogoUrl = (string?)(b != null ? b.LogoUrl : null), p.ImagesJson,
-                Tire = _db.TireSpecs.AsNoTracking().FirstOrDefault(ts => ts.ProductId == p.Id),
-                Rim = _db.RimSpecs.AsNoTracking().FirstOrDefault(rs => rs.ProductId == p.Id),
-                Category = (string?)(c != null ? c.Name : null)
-            }
+            select new { Product = p, Brand = br, Category = c, Inventory = inv }
         ).FirstOrDefaultAsync(ct);
         if (row is null) return null;
+        var reserved = await _db.InventoryReservations
+            .Where(r => r.ProductId == id && r.Status == ReservationStatus.Active && r.ExpiresAtUtc > now)
+            .SumAsync(r => (int?)r.Quantity, ct) ?? 0;
+        var onHand = row.Inventory?.OnHand ?? 0;
+        var stock = (onHand - reserved) < 0 ? 0 : (onHand - reserved);
+
         IReadOnlyList<string> images = Array.Empty<string>();
-        if (!string.IsNullOrWhiteSpace(row.ImagesJson))
+        if (!string.IsNullOrWhiteSpace(row.Product.ImagesJson))
         {
-            try { images = System.Text.Json.JsonSerializer.Deserialize<string[]>(row.ImagesJson!) ?? Array.Empty<string>(); }
+            try { images = System.Text.Json.JsonSerializer.Deserialize<string[]>(row.Product.ImagesJson!) ?? Array.Empty<string>(); }
             catch { images = Array.Empty<string>(); }
         }
-        TireSpecsDto? tire = null;
-        RimSpecsDto? rim = null;
-        if (row.Tire is not null)
-            tire = new TireSpecsDto(row.Tire.Type, row.Tire.LoadIndex, row.Tire.SpeedRating);
-        if (row.Rim is not null)
-            rim = new RimSpecsDto(row.Rim.DiameterIn, row.Rim.WidthIn, row.Rim.BoltPattern, row.Rim.OffsetMm, row.Rim.CenterBoreMm, row.Rim.Material, row.Rim.Finish);
-        return new ProductDetailDto(row.Id, row.Sku, row.Brand ?? string.Empty, row.ModelName, row.Size, row.Price, row.Active, row.Stock,
-            row.BrandLogoUrl, images, tire, rim, row.Category);
+        var tireSpecs = await _db.TireSpecs.AsNoTracking().FirstOrDefaultAsync(ts => ts.ProductId == id, ct);
+        var rimSpecs = await _db.RimSpecs.AsNoTracking().FirstOrDefaultAsync(rs => rs.ProductId == id, ct);
+
+        TireSpecsDto? tire = tireSpecs is null ? null : new TireSpecsDto(tireSpecs.Type, tireSpecs.LoadIndex, tireSpecs.SpeedRating);
+        RimSpecsDto? rim = rimSpecs is null ? null : new RimSpecsDto(rimSpecs.DiameterIn, rimSpecs.WidthIn, rimSpecs.BoltPattern, rimSpecs.OffsetMm, rimSpecs.CenterBoreMm, rimSpecs.Material, rimSpecs.Finish);
+
+        return new ProductDetailDto(row.Product.Id, row.Product.Sku, row.Brand.Name, row.Product.ModelName, row.Product.Size, row.Product.Price, row.Product.Active, stock,
+            row.Brand.LogoUrl, images, tire, rim, row.Category?.Name);
     }
 }

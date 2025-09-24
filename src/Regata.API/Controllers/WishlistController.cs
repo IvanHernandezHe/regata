@@ -37,12 +37,12 @@ public sealed class WishlistController : ControllerBase
     {
         var user = await _users.GetUserAsync(User);
         if (user is null) return Unauthorized();
-        var p = await _db.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Id == productId && x.Active);
+        var p = await _db.Products.AsNoTracking().Include(x => x.Brand).FirstOrDefaultAsync(x => x.Id == productId && x.Active);
         if (p is null) return NotFound();
         var exists = await _db.Wishlist.AnyAsync(x => x.UserId == user.Id && x.ProductId == p.Id);
         if (!exists)
         {
-            _db.Wishlist.Add(new WishlistItem(user.Id, p.Id, $"{p.Brand} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price));
+            _db.Wishlist.Add(new WishlistItem(user.Id, p.Id, $"{p.Brand.Name} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price));
             await _db.SaveChangesAsync();
             await _audit.LogAsync("wishlist.added", subjectType: nameof(WishlistItem), subjectId: p.Id.ToString());
         }
@@ -82,4 +82,3 @@ public sealed class WishlistController : ControllerBase
         return Ok(new { message = "moved", cartId = cart.Id });
     }
 }
-

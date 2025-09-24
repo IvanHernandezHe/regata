@@ -3,6 +3,7 @@ namespace Regata.Domain.Products;
 public sealed class RimSpecs
 {
     public Guid ProductId { get; private set; }
+    public Product Product { get; private set; } = default!;
     public double? DiameterIn { get; private set; }
     public double? WidthIn { get; private set; }
     public string? BoltPattern { get; private set; }
@@ -16,4 +17,3 @@ public sealed class RimSpecs
 
     private RimSpecs() { }
 }
-

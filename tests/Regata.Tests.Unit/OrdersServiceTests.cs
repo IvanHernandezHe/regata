@@ -29,7 +29,10 @@ public class OrdersServiceTests
         var sut = new OrdersService(db, inventory, shipping);
 
         // Seed product
-        var p = new Regata.Domain.Products.Product("SKU-1", "Brand", "Model", "205/55R16", 1000m);
+        var brand = new Regata.Domain.Products.Brand("Brand");
+        db.Brands.Add(brand);
+        await db.SaveChangesAsync();
+        var p = new Regata.Domain.Products.Product("SKU-1", brand.Id, "Model", "205/55R16", 1000m);
         db.Products.Add(p);
         await db.SaveChangesAsync();
 
@@ -51,7 +54,10 @@ public class OrdersServiceTests
         var sut = new OrdersService(db, inventory, shipping);
 
         // Seed product and address
-        var p = new Regata.Domain.Products.Product("SKU-2", "Brand", "Model", "205/55R16", 1500m);
+        var brand = new Regata.Domain.Products.Brand("Brand");
+        db.Brands.Add(brand);
+        await db.SaveChangesAsync();
+        var p = new Regata.Domain.Products.Product("SKU-2", brand.Id, "Model", "205/55R16", 1500m);
         db.Products.Add(p);
         await db.SaveChangesAsync();
 

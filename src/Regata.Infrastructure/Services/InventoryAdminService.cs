@@ -15,10 +15,12 @@ public sealed class InventoryAdminService : IInventoryAdminService
     {
         var q = _db.Inventory.AsNoTracking().AsQueryable();
         if (productId.HasValue) q = q.Where(i => i.ProductId == productId.Value);
-        var list = await q
-            .Join(_db.Products.AsNoTracking(), i => i.ProductId, p => p.Id,
-                (i, p) => new InventoryRowDto(p.Id, p.Sku, p.Brand, p.ModelName, p.Size, i.OnHand, i.Reserved, i.Version))
-            .ToListAsync(ct);
+        var list = await (
+            from i in q
+            join p in _db.Products.AsNoTracking() on i.ProductId equals p.Id
+            join b in _db.Brands.AsNoTracking() on p.BrandId equals b.Id
+            select new InventoryRowDto(p.Id, p.Sku, b.Name, p.ModelName, p.Size, i.OnHand, i.Reserved, i.Version)
+        ).ToListAsync(ct);
         return list;
     }
 
@@ -46,4 +48,3 @@ public sealed class InventoryAdminService : IInventoryAdminService
         await _db.SaveChangesAsync(ct);
     }
 }
-

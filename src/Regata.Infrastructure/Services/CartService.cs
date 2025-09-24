@@ -47,12 +47,15 @@ public sealed class CartService : ICartService
             anon = await _db.Carts.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == cookieCartId && x.UserId == null, ct);
         var ids = items.Select(i => i.productId).Distinct().ToList();
         if (anon is not null) ids = ids.Union(anon.Items.Select(i => i.ProductId)).Distinct().ToList();
-        var products = await _db.Products.AsNoTracking().Where(p => ids.Contains(p.Id) && p.Active).ToListAsync(ct);
+        var products = await _db.Products.AsNoTracking()
+            .Include(p => p.Brand)
+            .Where(p => ids.Contains(p.Id) && p.Active)
+            .ToListAsync(ct);
         foreach (var it in items)
         {
             var p = products.FirstOrDefault(x => x.Id == it.productId); if (p is null) continue;
             var ex = userCart.Items.FirstOrDefault(i => i.ProductId == p.Id);
-            if (ex is null) userCart.Items.Add(new CartItem(userCart.Id, p.Id, $"{p.Brand} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, Math.Max(1, it.qty)));
+            if (ex is null) userCart.Items.Add(new CartItem(userCart.Id, p.Id, $"{p.Brand.Name} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, Math.Max(1, it.qty)));
             else ex.Add(Math.Max(1, it.qty));
         }
         if (anon is not null)
@@ -61,7 +64,7 @@ public sealed class CartService : ICartService
             {
                 var p = products.FirstOrDefault(x => x.Id == i.ProductId); if (p is null) continue;
                 var ex = userCart.Items.FirstOrDefault(x => x.ProductId == i.ProductId);
-                if (ex is null) userCart.Items.Add(new CartItem(userCart.Id, p.Id, $"{p.Brand} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, i.Quantity));
+                if (ex is null) userCart.Items.Add(new CartItem(userCart.Id, p.Id, $"{p.Brand.Name} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, i.Quantity));
                 else ex.Add(i.Quantity);
             }
             _db.Carts.Remove(anon);
@@ -74,10 +77,10 @@ public sealed class CartService : ICartService
     {
         var c = await GetOrCreateAsync(userId, cookieCartId, ct);
         await _db.Entry(c).Collection(x => x.Items).LoadAsync(ct);
-        var p = await _db.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Id == productId && x.Active, ct);
+        var p = await _db.Products.AsNoTracking().Include(x => x.Brand).FirstOrDefaultAsync(x => x.Id == productId && x.Active, ct);
         if (p is null) throw new KeyNotFoundException("Product not found");
         var ex = c.Items.FirstOrDefault(i => i.ProductId == p.Id);
-        if (ex is null) c.Items.Add(new CartItem(c.Id, p.Id, $"{p.Brand} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, Math.Max(1, qty)));
+        if (ex is null) c.Items.Add(new CartItem(c.Id, p.Id, $"{p.Brand.Name} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, Math.Max(1, qty)));
         else ex.Add(Math.Max(1, qty));
         c.Touch(); await _db.SaveChangesAsync(ct);
         return await SerializeAsync(c, ct);
@@ -132,4 +135,3 @@ public sealed class CartService : ICartService
         return new CartDto(cart.Id, cart.UserId, items, subtotal);
     }
 }
-

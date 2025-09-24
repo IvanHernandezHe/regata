@@ -126,14 +126,17 @@ public sealed class OrderAdminService : IOrderAdminService
 
         var list = items?.ToList() ?? new List<(Guid productId, int qty)>();
         var ids = list.Select(x => x.productId).Distinct().ToList();
-        var products = await _db.Products.AsNoTracking().Where(p => ids.Contains(p.Id) && p.Active).ToListAsync(ct);
+        var products = await _db.Products.AsNoTracking()
+            .Include(p => p.Brand)
+            .Where(p => ids.Contains(p.Id) && p.Active)
+            .ToListAsync(ct);
         foreach (var it in list)
         {
             var p = products.FirstOrDefault(x => x.Id == it.productId); if (p is null) continue;
             var oi = new OrderItem();
             oi.GetType().GetProperty(nameof(OrderItem.OrderId))!.SetValue(oi, o.Id);
             oi.GetType().GetProperty(nameof(OrderItem.ProductId))!.SetValue(oi, p.Id);
-            oi.GetType().GetProperty(nameof(OrderItem.ProductName))!.SetValue(oi, $"{p.Brand} {p.ModelName} {p.Size}");
+            oi.GetType().GetProperty(nameof(OrderItem.ProductName))!.SetValue(oi, $"{p.Brand.Name} {p.ModelName} {p.Size}");
             oi.GetType().GetProperty(nameof(OrderItem.ProductSku))!.SetValue(oi, p.Sku);
             oi.GetType().GetProperty(nameof(OrderItem.Size))!.SetValue(oi, p.Size);
             oi.GetType().GetProperty(nameof(OrderItem.UnitPrice))!.SetValue(oi, p.Price);
@@ -159,11 +162,11 @@ public sealed class OrderAdminService : IOrderAdminService
         {
             if (it is null)
             {
-                var p = await _db.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Id == productId && x.Active, ct) ?? throw new KeyNotFoundException("Product not found");
+                var p = await _db.Products.AsNoTracking().Include(x => x.Brand).FirstOrDefaultAsync(x => x.Id == productId && x.Active, ct) ?? throw new KeyNotFoundException("Product not found");
                 var oi = new OrderItem();
                 oi.GetType().GetProperty(nameof(OrderItem.OrderId))!.SetValue(oi, id);
                 oi.GetType().GetProperty(nameof(OrderItem.ProductId))!.SetValue(oi, p.Id);
-                oi.GetType().GetProperty(nameof(OrderItem.ProductName))!.SetValue(oi, $"{p.Brand} {p.ModelName} {p.Size}");
+                oi.GetType().GetProperty(nameof(OrderItem.ProductName))!.SetValue(oi, $"{p.Brand.Name} {p.ModelName} {p.Size}");
                 oi.GetType().GetProperty(nameof(OrderItem.ProductSku))!.SetValue(oi, p.Sku);
                 oi.GetType().GetProperty(nameof(OrderItem.Size))!.SetValue(oi, p.Size);
                 oi.GetType().GetProperty(nameof(OrderItem.UnitPrice))!.SetValue(oi, p.Price);

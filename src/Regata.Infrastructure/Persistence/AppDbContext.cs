@@ -64,11 +64,12 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
             e.HasKey(p => p.Id);
             e.Property(p => p.Price).HasConversion<double>();
             e.HasIndex(p => p.Sku).IsUnique();
-            e.HasOne<Brand>()
+            e.Property(p => p.BrandId).IsRequired();
+            e.HasOne(p => p.Brand)
                 .WithMany()
                 .HasForeignKey(p => p.BrandId)
-                .OnDelete(DeleteBehavior.SetNull);
-            e.HasOne<ProductCategory>()
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(p => p.Category)
                 .WithMany()
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
@@ -87,16 +88,16 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
         b.Entity<TireSpecs>(e =>
         {
             e.HasKey(x => x.ProductId);
-            e.HasOne<Product>()
-                .WithOne()
+            e.HasOne(x => x.Product)
+                .WithOne(p => p.Tire)
                 .HasForeignKey<TireSpecs>(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
         b.Entity<RimSpecs>(e =>
         {
             e.HasKey(x => x.ProductId);
-            e.HasOne<Product>()
-                .WithOne()
+            e.HasOne(x => x.Product)
+                .WithOne(p => p.Rim)
                 .HasForeignKey<RimSpecs>(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

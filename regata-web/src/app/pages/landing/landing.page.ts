@@ -1,10 +1,11 @@
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgFor, NgIf, AsyncPipe, SlicePipe } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiService } from '../../core/api.service';
 import { FormsModule } from '@angular/forms';
 import { Product } from '../../core/models/product.model';
+import { Brand } from '../../core/models/brand.model';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
 
 @Component({
@@ -376,16 +377,23 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
   </section>
 
   <!-- Brands -->
-  <section class="container mb-5 brand-logos">
-    <h2 class="h4 mb-3">Marcas</h2>
-    <div class="d-flex flex-wrap gap-4 align-items-center">
-      <img src="https://dummyimage.com/120x38/ddd/999&text=Pirelli" alt="Pirelli"/>
-      <img src="https://dummyimage.com/120x38/ddd/999&text=Michelin" alt="Michelin"/>
-      <img src="https://dummyimage.com/120x38/ddd/999&text=Bridgestone" alt="Bridgestone"/>
-      <img src="https://dummyimage.com/120x38/ddd/999&text=Goodyear" alt="Goodyear"/>
-      <img src="https://dummyimage.com/120x38/ddd/999&text=Continental" alt="Continental"/>
-      <img src="https://dummyimage.com/120x38/ddd/999&text=Dunlop" alt="Dunlop"/>
-    </div>
+  <section class="container mb-5 brand-logos" aria-labelledby="brands-title">
+    <h2 id="brands-title" class="h4 mb-3">Marcas</h2>
+    <ng-container *ngIf="brandLogos.length; else brandLogosEmpty">
+      <div class="d-flex flex-wrap gap-4 align-items-center">
+        <img
+          *ngFor="let brand of brandLogos; trackBy: trackBrandId"
+          [src]="brand.logoUrl || fallbackBrandLogo"
+          [attr.alt]="brand.name"
+          [attr.title]="brand.name"
+          loading="lazy"
+          (error)="onBrandImageError($event)"
+        />
+      </div>
+    </ng-container>
+    <ng-template #brandLogosEmpty>
+      <div class="text-muted small">Agrega marcas en el panel de administración para mostrarlas aquí.</div>
+    </ng-template>
   </section>
 
   <!-- Coupons / promos -->
@@ -483,7 +491,7 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
   </div>
   `
 })
-export class LandingPage implements OnDestroy {
+export class LandingPage implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private router = inject(Router);
   products$ = this.api.getProducts();
@@ -491,6 +499,8 @@ export class LandingPage implements OnDestroy {
   readonly waLink = `https://wa.me/${this.waNumber}?text=${encodeURIComponent('Hola, quiero una cotización de llantas')}`;
   readonly supportPhone = '5555555555';
   readonly supportPhoneDisplay = '(55) 5555 5555';
+  brandLogos: Brand[] = [];
+  readonly fallbackBrandLogo = 'https://dummyimage.com/140x40/ddd/999&text=Marca';
 
   // Carousel state
   slides = [
@@ -507,6 +517,19 @@ export class LandingPage implements OnDestroy {
 
   constructor() {
     this.#startTimer(true);
+  }
+
+  ngOnInit(): void {
+    this.api.getBrands().subscribe({
+      next: brands => {
+        this.brandLogos = brands;
+        this.brands = brands.map(b => b.name);
+      },
+      error: () => {
+        this.brandLogos = [];
+        this.brands = [];
+      }
+    });
   }
 
   ngOnDestroy(): void { this.#stopTimer(); }
@@ -556,7 +579,7 @@ export class LandingPage implements OnDestroy {
   size: { width?: number; aspect?: number; rim?: number } = {};
 
   // Landing hero filters (for UX; concatenated into a query string)
-  brands = ['Pirelli', 'Michelin', 'Bridgestone', 'Goodyear', 'Continental'];
+  brands: string[] = [];
   years = Array.from({ length: 26 }, (_, i) => 2000 + i);
   filters: { brand?: string; year?: number; price?: string } = {};
 
@@ -566,6 +589,14 @@ export class LandingPage implements OnDestroy {
   }
 
   trackById(_: number, p: Product) { return p.id; }
+  trackBrandId(_: number, brand: Brand) { return brand.id; }
+
+  onBrandImageError(evt: Event) {
+    const target = evt.target as HTMLImageElement | null;
+    if (target && target.src !== this.fallbackBrandLogo) {
+      target.src = this.fallbackBrandLogo;
+    }
+  }
 
   onSizeSearch() {
     if (!this.size.width || !this.size.aspect || !this.size.rim) return;

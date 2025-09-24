@@ -42,12 +42,15 @@ public sealed class OrdersService : IOrdersService
         if (items is null || items.Count == 0) throw new ArgumentException("No items");
         var normalized = items.GroupBy(i => i.ProductId).Select(g => new { ProductId = g.Key, Quantity = Math.Max(1, g.Sum(x => x.Quantity)) }).ToList();
         var ids = normalized.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _db.Products.AsNoTracking().Where(p => ids.Contains(p.Id) && p.Active).ToListAsync(ct);
+        var products = await _db.Products.AsNoTracking()
+            .Include(p => p.Brand)
+            .Where(p => ids.Contains(p.Id) && p.Active)
+            .ToListAsync(ct);
         var lines = new List<OrderItemLineDto>();
         foreach (var it in normalized)
         {
             var p = products.FirstOrDefault(x => x.Id == it.ProductId); if (p is null) continue;
-            lines.Add(new OrderItemLineDto(p.Id, $"{p.Brand} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, it.Quantity, p.Price * it.Quantity));
+            lines.Add(new OrderItemLineDto(p.Id, $"{p.Brand.Name} {p.ModelName} {p.Size}", p.Sku, p.Size, p.Price, it.Quantity, p.Price * it.Quantity));
         }
         if (lines.Count == 0) throw new InvalidOperationException("No valid products");
         var subtotal = lines.Sum(l => l.LineTotal);
@@ -96,14 +99,17 @@ public sealed class OrdersService : IOrdersService
 
         var normalized = items.GroupBy(i => i.ProductId).Select(g => new { ProductId = g.Key, Quantity = Math.Max(1, g.Sum(x => x.Quantity)) }).ToList();
         var ids = normalized.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _db.Products.AsNoTracking().Where(p => ids.Contains(p.Id) && p.Active).ToListAsync(ct);
+        var products = await _db.Products.AsNoTracking()
+            .Include(p => p.Brand)
+            .Where(p => ids.Contains(p.Id) && p.Active)
+            .ToListAsync(ct);
         foreach (var it in normalized)
         {
             var p = products.FirstOrDefault(x => x.Id == it.ProductId); if (p is null) continue;
             var oi = new Regata.Domain.Orders.OrderItem();
             oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.OrderId))!.SetValue(oi, order.Id);
             oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.ProductId))!.SetValue(oi, p.Id);
-            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.ProductName))!.SetValue(oi, $"{p.Brand} {p.ModelName} {p.Size}");
+            oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.ProductName))!.SetValue(oi, $"{p.Brand.Name} {p.ModelName} {p.Size}");
             oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.ProductSku))!.SetValue(oi, p.Sku);
             oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.Size))!.SetValue(oi, p.Size);
             oi.GetType().GetProperty(nameof(Regata.Domain.Orders.OrderItem.UnitPrice))!.SetValue(oi, p.Price);
