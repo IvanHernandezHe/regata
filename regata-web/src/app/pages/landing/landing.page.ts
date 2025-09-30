@@ -74,7 +74,17 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
     .trust-logos img { max-height: 28px; opacity: .9; }
 
     .service-card { border-radius: .75rem; border: 1px solid rgba(0,0,0,.08); background: #fff; padding: 1rem; height: 100%; }
-    .brand-logos img { max-height: 38px; filter: grayscale(1) contrast(.9); opacity: .85; }
+    /* Brand logos: colored, uniform size, justified; links with subtle hover */
+    .brand-logos a { display: inline-flex; align-items: center; justify-content: center; width: 120px; height: 42px; border-radius: .5rem; border: 1px solid rgba(0,0,0,.06); background: #fff; box-shadow: 0 1px 6px rgba(0,0,0,.06); transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+    .brand-logos a:hover, .brand-logos a:focus-visible { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.12); border-color: color-mix(in srgb, var(--jdm-red) 35%, #000 0%); outline: none; }
+    .brand-logos img {
+      height: 42px;
+      width: 120px;
+      object-fit: contain;
+      filter: none;
+      opacity: 1;
+      display: block;
+    }
     .brand-logos img:hover { filter: none; opacity: 1; }
     .cashback { border-radius: .75rem; background: linear-gradient(135deg, #111 0%, #1e1e1e 60%, #2a2a2a 100%); color: #fff; overflow: hidden; }
     .coupon-card { border-radius: .75rem; border: 2px dashed #e0e0e0; background: #fff; }
@@ -380,15 +390,23 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
   <section class="container mb-5 brand-logos" aria-labelledby="brands-title">
     <h2 id="brands-title" class="h4 mb-3">Marcas</h2>
     <ng-container *ngIf="brandLogos.length; else brandLogosEmpty">
-      <div class="d-flex flex-wrap gap-4 align-items-center">
-        <img
+      <div class="d-flex flex-wrap gap-4 align-items-center justify-content-center justify-content-lg-between">
+        <a
           *ngFor="let brand of brandLogos; trackBy: trackBrandId"
-          [src]="brand.logoUrl || fallbackBrandLogo"
-          [attr.alt]="brand.name"
-          [attr.title]="brand.name"
-          loading="lazy"
-          (error)="onBrandImageError($event)"
-        />
+          [routerLink]="['/shop']"
+          [queryParams]="{ brand: brand.name }"
+          class="text-decoration-none"
+          [attr.aria-label]="'Ver llantas de ' + brand.name"
+          title="Ver en tienda"
+        >
+          <img
+            [src]="brand.logoUrl || fallbackBrandLogo"
+            [attr.alt]="brand.name"
+            [attr.title]="brand.name"
+            loading="lazy"
+            (error)="onBrandImageError($event)"
+          />
+        </a>
       </div>
     </ng-container>
     <ng-template #brandLogosEmpty>
@@ -606,12 +624,19 @@ export class LandingPage implements OnInit, OnDestroy {
 
   resetSize() { this.size = {}; }
 
+  onBrandQuick(brand: string) {
+    const b = (brand || '').trim();
+    if (!b) return;
+    this.filters.brand = b;
+    this.router.navigate(['/shop'], { queryParams: { brand: b } });
+  }
+
   goToShop(q?: string) {
-    if (q && q.trim().length) {
-      this.router.navigate(['/shop'], { queryParams: { q } });
-    } else {
-      this.router.navigate(['/shop']);
-    }
+    const params: any = {};
+    const t = (q || '').trim();
+    if (t) params.q = t;
+    if (this.filters.brand) params.brand = this.filters.brand;
+    this.router.navigate(['/shop'], { queryParams: params });
   }
 
   submitSearch(keyword: string) {

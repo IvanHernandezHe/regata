@@ -21,6 +21,21 @@ import { LucideAngularModule } from 'lucide-angular';
     .price { font-size: 1.1rem; }
     .category-badge { position: absolute; top: .5rem; left: .5rem; }
     :host-context([data-bs-theme='dark']) .media { background: #0f0f0f; }
+    /* Responsive actions: buttons fill and wrap nicely on small screens */
+    .actions { display: flex; gap: .5rem; }
+    .actions .btn { flex: 1 1 0; justify-content: center; text-align: center; }
+    @media (min-width: 576px) {
+      .actions { flex-wrap: nowrap; }
+    }
+    /* Minimalist hover/focus effects (no 3D lift) */
+    .card { transition: border-color .15s ease, box-shadow .15s ease; }
+    .card:hover { box-shadow: none; border-color: color-mix(in srgb, var(--jdm-red) 25%, #dcdcdc); }
+    .actions .btn { transition: background-color .12s ease, border-color .12s ease, color .12s ease; }
+    .actions .btn:focus-visible { outline: none; box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--jdm-red) 25%, transparent); }
+    /* Favorite button: subtle tinted hover */
+    .btn-fav { background: #fff; color: #555; border-color: rgba(0,0,0,.15); }
+    .btn-fav:hover, .btn-fav:focus { color: var(--jdm-red); border-color: var(--jdm-red); background: color-mix(in srgb, var(--jdm-red) 8%, #fff); }
+    .btn-fav:active { background: color-mix(in srgb, var(--jdm-red) 14%, #fff); }
   `],
   template: `
   <div class="card h-100 position-relative">
@@ -36,10 +51,12 @@ import { LucideAngularModule } from 'lucide-angular';
       </h5>
       <div class="text-muted small">{{product!.size}} · SKU {{product!.sku}}</div>
       <span *ngIf="product?.stock !== undefined" class="badge mt-1 align-self-start" [ngClass]="stockClass(product!.stock || 0)">{{ stockLabel(product!.stock || 0) }}</span>
-      <div class="mt-auto d-flex justify-content-between align-items-center pt-2">
-        <strong class="price">{{ product!.price | currency:'MXN' }}</strong>
-        <div class="d-flex align-items-center gap-2">
-          <button class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2" type="button" (click)="saveForLater()" [title]="auth.isAuthenticated() ? 'Agregar a favoritos' : 'Inicia sesión para guardar'" aria-label="Agregar a favoritos">
+      <div class="mt-auto pt-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong class="price">{{ product!.price | currency:'MXN' }}</strong>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 btn-fav" type="button" (click)="saveForLater()" [title]="auth.isAuthenticated() ? 'Agregar a favoritos' : 'Inicia sesión para guardar'" aria-label="Agregar a favoritos">
             <lucide-icon name="heart" size="16" [strokeWidth]="2.5" aria-hidden="true"></lucide-icon>
             <span class="d-none d-sm-inline">Guardar</span>
           </button>

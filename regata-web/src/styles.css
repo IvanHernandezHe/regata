@@ -164,6 +164,33 @@ footer.footer.bg-dark::before {
   background: #111; border-color: #2a2a2a; box-shadow: 0 10px 28px rgba(0,0,0,.35);
 }
 
+/* Minimal, consistent hovers for cards and tiles (no 3D lift) */
+.card,
+.feature,
+.service-card,
+.info-split,
+.category-tile,
+.coupon-card {
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.card:hover,
+.feature:hover,
+.service-card:hover,
+.info-split:hover,
+.category-tile:hover,
+.coupon-card:hover {
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--jdm-red) 22%, #dcdcdc);
+}
+[data-bs-theme="dark"] .card:hover,
+[data-bs-theme="dark"] .feature:hover,
+[data-bs-theme="dark"] .service-card:hover,
+[data-bs-theme="dark"] .info-split:hover,
+[data-bs-theme="dark"] .category-tile:hover,
+[data-bs-theme="dark"] .coupon-card:hover {
+  border-color: color-mix(in srgb, var(--jdm-red) 35%, #3a3a3a);
+}
+
 /* Utility: subtle outlined text used in banners/titles */
 .outline-black { text-shadow: -1px 0 #000, 1px 0 #000, 0 -1px #000, 0 1px #000; }
 
@@ -186,4 +213,31 @@ footer.footer.bg-dark::before {
   color: #fff !important;
   background: var(--jdm-red) !important;
   border-color: var(--jdm-red) !important;
+}
+
+/* Minimalist outline secondary hover to match favorite button style */
+.btn-outline-secondary {
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+}
+.btn-outline-secondary:hover, .btn-outline-secondary:focus {
+  color: var(--jdm-red);
+  border-color: var(--jdm-red);
+  background: color-mix(in srgb, var(--jdm-red) 8%, #fff);
+}
+
+/* Consistent focus ring for buttons */
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--jdm-red) 25%, transparent) !important;
+}
+
+/* Minimalist primary action (Agregar) hover */
+.btn-warning {
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+  color: #111;
+}
+.btn-warning:hover, .btn-warning:focus {
+  background: color-mix(in srgb, #ffc107 88%, #000 12%);
+  border-color: color-mix(in srgb, #ffc107 80%, #000 20%);
+  color: #111;
 }
