@@ -62,7 +62,8 @@ public sealed class AppDbContext : IdentityDbContext<IdentityUser<Guid>, Identit
         b.Entity<Product>(e =>
         {
             e.HasKey(p => p.Id);
-            e.Property(p => p.Price).HasConversion<double>();
+            e.Property(p => p.Price).HasPrecision(18, 2);
+            e.Property(p => p.ImagesJson).HasColumnType("jsonb");
             e.HasIndex(p => p.Sku).IsUnique();
             e.Property(p => p.BrandId).IsRequired();
             e.HasOne(p => p.Brand)

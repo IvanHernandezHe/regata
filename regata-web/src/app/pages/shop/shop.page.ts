@@ -68,16 +68,18 @@ import { CartStore } from '../../state/cart.store';
     /* Price range */
     .price-range .range-values { display: flex; justify-content: space-between; font-size: .9rem; color: #6c757d; margin-bottom: .25rem; }
     .price-range .range-inputs { position: relative; height: 32px; }
-    .price-range .range-track { position: absolute; left: 0; right: 0; top: 14px; height: 4px; background: #e9ecef; border-radius: 999px; }
-    .price-range .range-fill { position: absolute; top: 0; height: 4px; background: var(--jdm-red); border-radius: 999px; pointer-events: none; transition: left .12s ease, width .12s ease; }
-    .price-range input[type=range] { position: absolute; left: 0; right: 0; top: 0; width: 100%; appearance: none; height: 32px; background: none; outline: none; }
+    .price-range { --price-track-base: #e9ecef; --price-track-fill: var(--jdm-red); }
+    :host-context([data-bs-theme='dark']) .price-range { --price-track-base: #2a2a2a; }
+    .price-range .range-track { position: absolute; left: 0; right: 0; top: 14px; height: 4px; border-radius: 999px; background: var(--price-track-base); }
+    .price-range .range-fill { position: absolute; top: 14px; height: 4px; border-radius: 999px; background: var(--price-track-fill); pointer-events: none; transition: left .15s ease, width .15s ease; }
+    .price-range input[type=range] { position: absolute; left: 0; right: 0; top: 0; width: 100%; appearance: none; height: 32px; background: none; outline: none; pointer-events: none; }
     .price-range input[type=range]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; background: var(--jdm-red); border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
+    .price-range input[type=range]::-webkit-slider-thumb { pointer-events: auto; }
     .price-range input[type=range]::-webkit-slider-runnable-track { background: transparent; border: none; }
-    .price-range input[type=range]::-moz-range-thumb { width: 18px; height: 18px; background: var(--jdm-red); border: none; border-radius: 50%; cursor: pointer; }
+    .price-range input[type=range]::-moz-range-thumb { width: 18px; height: 18px; background: var(--jdm-red); border: none; border-radius: 50%; cursor: pointer; pointer-events: auto; }
     .price-range input[type=range]::-moz-range-track { background: transparent; border: none; }
     .price-range input[type=range].min { z-index: 3; }
     .price-range input[type=range].max { z-index: 2; }
-    :host-context([data-bs-theme='dark']) .price-range .range-track { background: #2a2a2a; }
   `],
   template: `
   <section class="container my-4">
@@ -128,9 +130,8 @@ import { CartStore } from '../../state/cart.store';
             <label class="form-label small text-muted">Precio</label>
             <div class="range-values"><span>{{ priceMin | currency:'MXN':'symbol-narrow' }}</span><span>{{ priceMax | currency:'MXN':'symbol-narrow' }}</span></div>
             <div class="range-inputs">
-            <div class="range-track">
-              <div class="range-fill" [style.left.%]="priceFillLeft()" [style.width.%]="priceFillWidth()"></div>
-            </div>
+            <div class="range-track"></div>
+            <div class="range-fill" [style.left.%]="priceFillLeft()" [style.width.%]="priceFillWidth()"></div>
               <input class="min" type="range" [attr.min]="priceMinBound()" [attr.max]="priceMaxBound()" [step]="priceStep" [value]="priceMin" (input)="onPriceMin($any($event.target).value)"/>
               <input class="max" type="range" [attr.min]="priceMinBound()" [attr.max]="priceMaxBound()" [step]="priceStep" [value]="priceMax" (input)="onPriceMax($any($event.target).value)"/>
             </div>
@@ -313,7 +314,8 @@ import { CartStore } from '../../state/cart.store';
           <label class="form-label small text-muted">Precio</label>
           <div class="range-values"><span>{{ priceMin | currency:'MXN':'symbol-narrow' }}</span><span>{{ priceMax | currency:'MXN':'symbol-narrow' }}</span></div>
           <div class="range-inputs">
-            <div class="range-track"><div class="range-fill" [style.left.%]="priceFillLeft()" [style.width.%]="priceFillWidth()"></div></div>
+            <div class="range-track"></div>
+            <div class="range-fill" [style.left.%]="priceFillLeft()" [style.width.%]="priceFillWidth()"></div>
             <input class="min" type="range" [attr.min]="priceMinBound()" [attr.max]="priceMaxBound()" [step]="priceStep" [value]="priceMin" (input)="onPriceMin($any($event.target).value)"/>
             <input class="max" type="range" [attr.min]="priceMinBound()" [attr.max]="priceMaxBound()" [step]="priceStep" [value]="priceMax" (input)="onPriceMax($any($event.target).value)"/>
           </div>
@@ -418,8 +420,20 @@ export class ShopPage {
   globalPriceBounds: { min: number; max: number } | null = null;
 
   add(p: Product) { this.cart.add(p); }
-  onSearch(q: string) { const t = (q || '').trim(); this.currentQuery = t; this.load(); }
-  onCategory(c: string) { this.selectedCategory = c || ''; this.load(); }
+
+  onSearch(q: string) {
+    const t = (q || '').trim();
+    if (t === this.currentQuery) return;
+    this.currentQuery = t;
+    this.load();
+  }
+
+  onCategory(c: string) {
+    const next = (c || '').trim();
+    if (next === this.selectedCategory) return;
+    this.selectedCategory = next;
+    this.load();
+  }
   trackById(_: number, p: Product) { return p.id; }
   private load() {
     this.api.getProducts(this.currentQuery || undefined, this.selectedCategory || undefined)
@@ -448,7 +462,7 @@ export class ShopPage {
       if (category) categories.add(category);
       const brandName = (p.brand || '').trim();
       if (brandName) {
-        const brandKey = brandName.toLowerCase();
+        const brandKey = this.normalizeKey(brandName);
         if (!brands.has(brandKey)) brands.set(brandKey, brandName);
       }
       const parts = this.parseSize(p.size);
@@ -468,16 +482,16 @@ export class ShopPage {
       }
     }
 
-    this.categoriesAll = Array.from(categories).sort();
-    const brandEntries = Array.from(brands.entries()).sort(([, a], [, b]) => a.localeCompare(b));
+    this.categoriesAll = Array.from(categories).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+    const brandEntries = Array.from(brands.entries()).sort(([, a], [, b]) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
     this.brandsAll = brandEntries.map(([key, label]) => ({ key, label }));
     this.brandLabels = new Map(brandEntries);
     this.widthsAll = Array.from(widths).sort((a,b)=>a-b);
     this.aspectsAll = Array.from(aspects).sort((a,b)=>a-b);
     this.rimsAll = Array.from(rims).sort((a,b)=>a-b);
-    this.typesAll = Array.from(types).sort();
-    this.loadIndicesAll = Array.from(loads).sort();
-    this.speedRatingsAll = Array.from(speeds).sort();
+    this.typesAll = Array.from(types).sort((a,b)=>a.localeCompare(b));
+    this.loadIndicesAll = Array.from(loads).sort((a,b)=>a.localeCompare(b));
+    this.speedRatingsAll = Array.from(speeds).sort((a,b)=>a.localeCompare(b));
     if (minPrice !== Number.POSITIVE_INFINITY && maxPrice !== Number.NEGATIVE_INFINITY) {
       const minBound = Math.floor(minPrice / this.priceStep) * this.priceStep;
       let maxBound = Math.ceil(maxPrice / this.priceStep) * this.priceStep;
@@ -508,29 +522,41 @@ export class ShopPage {
     const typeSet = this.typesSelected;
     const loadSet = this.loadSelected;
     const speedSet = this.speedSelected;
-    const modelQ = (this.modelQuery || '').toLowerCase();
+    const modelQ = this.normalizeKey(this.modelQuery);
+    const normalizedQuery = this.normalizeKey(q);
 
     const has = (s: Set<any>) => s && s.size > 0;
 
     let filtered = this.allProducts.filter(p => {
-      if (q && !(p.brand + ' ' + p.modelName + ' ' + p.sku + ' ' + (p.size||'')).toLowerCase().includes(q.toLowerCase())) return false;
-      if (this.selectedCategory && (p.category || '') !== this.selectedCategory) return false;
-      const brandKey = (p.brand || '').trim().toLowerCase();
+      if (normalizedQuery) {
+        const searchable = this.normalizeKey(`${p.brand ?? ''} ${p.modelName ?? ''} ${p.sku ?? ''} ${p.size ?? ''}`);
+        if (!searchable.includes(normalizedQuery)) return false;
+      }
+
+      const category = (p.category || '').trim();
+      if (this.selectedCategory && category !== this.selectedCategory) return false;
+
+      const brandKey = this.normalizeKey(p.brand);
       if (hasBrandFilter && (!brandKey || !brandKeys.has(brandKey))) return false;
-      if (modelQ && !p.modelName.toLowerCase().includes(modelQ)) return false;
+
+      if (modelQ) {
+        const modelName = this.normalizeKey(p.modelName);
+        if (!modelName.includes(modelQ)) return false;
+      }
 
       const parts = this.parseSize(p.size);
       if (widthSel !== undefined && !(parts && parts.width === widthSel)) return false;
       if (aspectSel !== undefined && !(parts && parts.aspect === aspectSel)) return false;
       // rim can come from tire size or rim.diameterIn (for rims category)
-      const rimVal = parts?.rim ?? (p.rim?.diameterIn || null);
-      if (rimSel !== undefined && !(rimVal && rimVal === rimSel)) return false;
+      const rimFromProduct = Number(p.rim?.diameterIn);
+      const rimCandidate = parts?.rim ?? (Number.isFinite(rimFromProduct) ? rimFromProduct : null);
+      if (rimSel !== undefined && !(rimCandidate !== null && rimCandidate === rimSel)) return false;
 
-      const t = (p.tire?.type || '').toUpperCase();
+      const t = (p.tire?.type || '').trim().toUpperCase();
       if (has(typeSet) && !(t && typeSet.has(t))) return false;
-      const li = (p.tire?.loadIndex || '');
+      const li = (p.tire?.loadIndex || '').trim();
       if (has(loadSet) && !(li && loadSet.has(li))) return false;
-      const sr = (p.tire?.speedRating || '').toUpperCase();
+      const sr = (p.tire?.speedRating || '').trim().toUpperCase();
       if (has(speedSet) && !(sr && speedSet.has(sr))) return false;
 
       // Price range (apply only if slider is narrowed inside current bounds)
@@ -568,23 +594,52 @@ export class ShopPage {
     this.syncUrlAndPersist();
   }
 
-  setModelQuery(v: string) { this.modelQuery = (v || '').trim(); this.applyFilters('other'); }
+  setModelQuery(v: string) {
+    const next = (v || '').trim();
+    if (next === this.modelQuery) return;
+    this.modelQuery = next;
+    this.applyFilters('other');
+  }
 
   toggleSet<T>(set: Set<T>, value: T, checked: boolean | undefined) {
     let normalized: any = value;
     if (set === (this.brandsSelected as unknown as Set<any>)) {
-      normalized = String(value ?? '').trim().toLowerCase();
+      normalized = this.normalizeKey(String(value ?? '')) as any;
     } else if (typeof value === 'string') {
       normalized = value.trim();
     }
-    if (!normalized && normalized !== 0) { if (!checked) return; }
-    if (checked) set.add(normalized); else set.delete(normalized);
+    if (!normalized && normalized !== 0) {
+      if (!checked) return;
+    }
+    const hasValue = set.has(normalized);
+    if (checked) {
+      if (hasValue) return;
+      set.add(normalized);
+    } else {
+      if (!hasValue) return;
+      set.delete(normalized);
+    }
     this.applyFilters('other');
   }
 
-  setWidth(value: string) { this.widthSelected = value ? Number(value) : undefined; this.applyFilters('other'); }
-  setAspect(value: string) { this.aspectSelected = value ? Number(value) : undefined; this.applyFilters('other'); }
-  setRim(value: string) { this.rimSelected = value ? Number(value) : undefined; this.applyFilters('other'); }
+  setWidth(value: string) {
+    const next = value ? Number(value) : undefined;
+    if (next === this.widthSelected) return;
+    this.widthSelected = next;
+    this.applyFilters('other');
+  }
+  setAspect(value: string) {
+    const next = value ? Number(value) : undefined;
+    if (next === this.aspectSelected) return;
+    this.aspectSelected = next;
+    this.applyFilters('other');
+  }
+  setRim(value: string) {
+    const next = value ? Number(value) : undefined;
+    if (next === this.rimSelected) return;
+    this.rimSelected = next;
+    this.applyFilters('other');
+  }
 
   resetFilters() {
     this.brandsSelected.clear();
@@ -637,10 +692,24 @@ export class ShopPage {
 
   private parseSize(size: string | null | undefined): { width: number; aspect: number; rim: number } | null {
     if (!size) return null;
-    // Expect formats like 225/45R17 or 225/45 R17
-    const m = String(size).toUpperCase().replace(/\s+/g,'').match(/^(\d{3})\/(\d{2})R(\d{2})$/);
-    if (!m) return null;
-    return { width: Number(m[1]), aspect: Number(m[2]), rim: Number(m[3]) };
+    const raw = String(size).toUpperCase();
+    const sanitized = raw.replace(/-/g, ' ');
+    const widthAspect = sanitized.match(/(\d{3})\s*\/\s*(\d{2,3})/);
+    if (!widthAspect) return null;
+    const width = Number(widthAspect[1]);
+    const aspect = Number(widthAspect[2]);
+    const searchFrom = widthAspect.index !== undefined ? widthAspect.index + widthAspect[0].length : 0;
+    const remainder = sanitized.slice(searchFrom);
+    const rimMatch = remainder.match(/[A-Z]*\s*R\s*(\d{1,2}(?:\.\d)?)/) || sanitized.match(/R\s*(\d{1,2}(?:\.\d)?)/);
+    if (!rimMatch) return null;
+    const rim = Number(rimMatch[1]);
+    if (!Number.isFinite(width) || !Number.isFinite(aspect) || !Number.isFinite(rim)) return null;
+    return { width, aspect, rim };
+  }
+
+  private normalizeKey(value: string | null | undefined): string {
+    const trimmed = (value ?? '').toString().trim().toLowerCase();
+    return trimmed ? trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
   }
 
   private toQueryParams() {
@@ -689,9 +758,9 @@ export class ShopPage {
     const prevQ = this.currentQuery;
     const prevCat = this.selectedCategory;
 
-    this.currentQuery = qp.get('q') || '';
-    this.selectedCategory = qp.get('category') || '';
-    const brandCsv = getCsv('brand').map(v => v.toLowerCase());
+    this.currentQuery = (qp.get('q') || '').trim();
+    this.selectedCategory = (qp.get('category') || '').trim();
+    const brandCsv = getCsv('brand').map(v => this.normalizeKey(v));
     this.brandsSelected = new Set(brandCsv);
     this.modelQuery = qp.get('model') || '';
     const w = qp.get('width'); this.widthSelected = w ? Number(w) : undefined;
@@ -799,17 +868,21 @@ export class ShopPage {
   }
 
   priceFillLeft(): number {
+    const bounds = this.priceBounds || this.globalPriceBounds;
+    if (!bounds) return 0;
     const minPct = this.pricePct(this.priceMin);
     const maxPct = this.pricePct(this.priceMax);
-    return Math.min(minPct, maxPct);
+    return Math.max(Math.min(minPct, maxPct), 0);
   }
 
   priceFillWidth(): number {
+    const bounds = this.priceBounds || this.globalPriceBounds;
+    if (!bounds) return 0;
     const minPct = this.pricePct(this.priceMin);
     const maxPct = this.pricePct(this.priceMax);
-    const left = Math.min(minPct, maxPct);
-    const right = Math.max(minPct, maxPct);
-    return Math.max(right - left, 0);
+    const start = Math.max(Math.min(minPct, maxPct), 0);
+    const end = Math.min(Math.max(minPct, maxPct), 100);
+    return Math.max(end - start, 0);
   }
 
   priceMinBound(): number {

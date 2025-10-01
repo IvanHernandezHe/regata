@@ -1,3 +1,6 @@
+using System;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
 using Regata.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +13,6 @@ using Regata.Infrastructure.Services;
 using Regata.Infrastructure.Logging;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Regata.Infrastructure.Inventory;
 using Regata.Infrastructure.Messaging;
 using Regata.Infrastructure.Integration;
@@ -21,20 +23,41 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration cfg)
     {
-        var provider = cfg.GetSection("Database")["Provider"] ?? "Sqlite";
-        var cs = cfg.GetSection("Database")["ConnectionString"] ?? "Data Source=./AppData/regata.db";
+        var dbSection = cfg.GetSection("Database");
+        var provider = dbSection["Provider"] ?? "CosmosPostgres";
+        var poolSize = int.TryParse(dbSection["PoolSize"], out var parsedPool) && parsedPool > 0 ? parsedPool : 256;
 
-        services.AddDbContext<AppDbContext>(opt =>
+        services.AddDbContextPool<AppDbContext>((sp, opt) =>
         {
-            if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
-                opt.UseSqlServer(cs);
-            else if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
-                opt.UseSqlite(cs);
+            if (provider.Equals("CosmosPostgres", StringComparison.OrdinalIgnoreCase) || provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+            {
+                var cs = BuildNpgsqlConnectionString(dbSection);
+
+                opt.UseNpgsql(cs, npgsql =>
+                {
+                    var schema = dbSection["Schema"]
+                                 ?? Environment.GetEnvironmentVariable("DATABASE_SCHEMA");
+                    if (!string.IsNullOrWhiteSpace(schema))
+                    {
+                        npgsql.MigrationsHistoryTable("__EFMigrationsHistory", schema);
+                    }
+                    if (int.TryParse(dbSection["CommandTimeoutSeconds"], out var timeout) && timeout > 0)
+                    {
+                        npgsql.CommandTimeout(timeout);
+                    }
+                    npgsql.EnableRetryOnFailure(
+                        maxRetryCount: int.TryParse(dbSection["MaxRetryCount"], out var retries) && retries >= 0 ? retries : 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(double.TryParse(dbSection["MaxRetryDelaySeconds"], out var delay) && delay > 0 ? delay : 10),
+                        errorCodesToAdd: null);
+                });
+                opt.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                opt.EnableThreadSafetyChecks(false);
+            }
             else
-                opt.UseSqlite(cs); // fallback seguro a Sqlite
-            // Suppress model changes warning for runtime/CLI while we align snapshot
-            opt.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
-        });
+            {
+                throw new NotSupportedException($"Database provider '{provider}' is no longer supported. Please use 'CosmosPostgres'.");
+            }
+        }, poolSize);
 
         // Note: For isolated logging, we'll use IServiceScopeFactory to obtain a fresh scoped AppDbContext
 
@@ -110,5 +133,74 @@ public static class ServiceCollectionExtensions
         services.AddAuthorization();
 
         return services;
+    }
+
+    internal static string BuildNpgsqlConnectionString(IConfigurationSection dbSection)
+    {
+        var explicitCs = dbSection["ConnectionString"]
+                        ?? Environment.GetEnvironmentVariable("DATABASE_CONNECTION");
+        if (!string.IsNullOrWhiteSpace(explicitCs))
+        {
+            return explicitCs;
+        }
+
+        var host = dbSection["Host"]
+                   ?? Environment.GetEnvironmentVariable("DATABASE_HOST")
+                   ?? "localhost";
+        var portValue = dbSection["Port"]
+                        ?? Environment.GetEnvironmentVariable("DATABASE_PORT")
+                        ?? "5432";
+        var database = dbSection["Database"]
+                       ?? Environment.GetEnvironmentVariable("DATABASE_NAME")
+                       ?? "regata";
+        var user = dbSection["Username"]
+                   ?? Environment.GetEnvironmentVariable("DATABASE_USERNAME")
+                   ?? "postgres";
+        var password = dbSection["Password"]
+                       ?? Environment.GetEnvironmentVariable("DATABASE_PASSWORD")
+                       ?? "postgres";
+
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = host,
+            Database = database,
+            Username = user,
+            Password = password,
+            Pooling = true
+        };
+
+        if (int.TryParse(portValue, out var port) && port > 0)
+        {
+            builder.Port = port;
+        }
+
+        var sslMode = dbSection["SslMode"]
+                      ?? Environment.GetEnvironmentVariable("DATABASE_SSLMODE");
+        if (!string.IsNullOrWhiteSpace(sslMode) && Enum.TryParse<SslMode>(sslMode, true, out var parsedSslMode))
+        {
+            builder.SslMode = parsedSslMode;
+        }
+
+        var trustServerCertificate = dbSection["TrustServerCertificate"]
+                                   ?? Environment.GetEnvironmentVariable("DATABASE_TRUST_SERVER_CERTIFICATE");
+        if (!string.IsNullOrWhiteSpace(trustServerCertificate) && bool.TryParse(trustServerCertificate, out var trustCert) && trustCert)
+        {
+            builder["Trust Server Certificate"] = true;
+        }
+
+        var applicationName = dbSection["ApplicationName"]
+                              ?? Environment.GetEnvironmentVariable("DATABASE_APPLICATION_NAME");
+        if (!string.IsNullOrWhiteSpace(applicationName))
+        {
+            builder.ApplicationName = applicationName;
+        }
+
+        var extraOptions = dbSection.GetSection("Options");
+        foreach (var opt in extraOptions.GetChildren())
+        {
+            builder[opt.Key] = opt.Value;
+        }
+
+        return builder.ConnectionString;
     }
 }

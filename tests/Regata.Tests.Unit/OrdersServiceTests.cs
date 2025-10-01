@@ -1,5 +1,5 @@
-using System.Data.Common;
-using Microsoft.Data.Sqlite;
+using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Regata.Application.DTOs;
 using Regata.Infrastructure.Persistence;
@@ -10,11 +10,11 @@ using Microsoft.Extensions.Configuration;
 
 public class OrdersServiceTests
 {
-    private static AppDbContext CreateDb(out DbConnection conn)
+    private static AppDbContext CreateDb()
     {
-        conn = new SqliteConnection("DataSource=:memory:");
-        conn.Open();
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(conn).Options;
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
         var db = new AppDbContext(options);
         db.Database.EnsureCreated();
         return db;
@@ -23,7 +23,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task Quote_Computes_Totals_With_Shipping()
     {
-        using var db = CreateDb(out var conn);
+        using var db = CreateDb();
         var inventory = new InventoryService(db);
         var shipping = new Regata.Infrastructure.Services.DefaultShippingCalculator(new ConfigurationBuilder().Build());
         var sut = new OrdersService(db, inventory, shipping);
@@ -48,7 +48,7 @@ public class OrdersServiceTests
     [Fact]
     public async Task Checkout_Creates_Order_And_Items()
     {
-        using var db = CreateDb(out var conn);
+        using var db = CreateDb();
         var inventory = new InventoryService(db);
         var shipping = new Regata.Infrastructure.Services.DefaultShippingCalculator(new ConfigurationBuilder().Build());
         var sut = new OrdersService(db, inventory, shipping);
