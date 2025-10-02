@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ using Regata.Domain.Orders;
 using Regata.API.Payments;
 using Regata.Application.Validation;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace Regata.API.Controllers;
 
@@ -46,7 +48,7 @@ public sealed class OrdersController : ControllerBase
         return Ok(detail);
     }
 
-    public sealed record CheckoutItem(Guid ProductId, int Quantity);
+    public sealed record CheckoutItem(Guid ProductId, [property: JsonPropertyName("quantity")] int Quantity);
     public sealed record CheckoutRequest(List<CheckoutItem> Items, string? DiscountCode, string? ReservationToken, Guid? AddressId);
     public sealed record CheckoutResponse(Guid OrderId, decimal Subtotal, decimal Discount, decimal Shipping, decimal Total, string Currency, string CheckoutUrl);
     public sealed record QuoteResponse(decimal Subtotal, decimal Discount, decimal Shipping, decimal Total, string Currency, object[] Items);
@@ -72,14 +74,30 @@ public sealed class OrdersController : ControllerBase
         try { result = await _svc.CheckoutAsync(user.Id, lines, req.DiscountCode, req.AddressId, req.ReservationToken, HttpContext.RequestAborted); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         // Decide payment provider
-        var provider = _cfg["Payments:Provider"] ?? "Sandbox";
+        var configuredProvider = _cfg["Payments:Provider"] ?? "Sandbox";
+        var stripeApiKey = _cfg["Stripe:ApiKey"] ?? string.Empty;
+        var stripeConfigured = !string.IsNullOrWhiteSpace(stripeApiKey) && !stripeApiKey.Contains("REEMPLAZA", StringComparison.OrdinalIgnoreCase);
+        var provider = configuredProvider;
+        if (provider.Equals("Stripe", StringComparison.OrdinalIgnoreCase) && !stripeConfigured)
+        {
+            provider = "Sandbox";
+            await _audit.LogAsync("order.checkout_provider_fallback", subjectType: nameof(Order), subjectId: result.OrderId.ToString(), description: "Stripe no configurado. Se usa Sandbox.");
+        }
         string checkoutUrl;
         if (provider.Equals("Stripe", StringComparison.OrdinalIgnoreCase))
         {
-            var origins = _cfg.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "http://localhost:4200" };
-            var feBase = origins.FirstOrDefault() ?? "http://localhost:4200";
-            var successUrl = CombineUrl(feBase, "/perfil");
-            var cancelUrl = CombineUrl(feBase, "/cart");
+            var stripeCfg = _cfg.GetSection("Stripe");
+            var baseUrl = stripeCfg?["ReturnUrlBase"];
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                var origins = _cfg.GetSection("Cors:Origins").Get<string[]>() ?? new[] { "http://localhost:4200" };
+                baseUrl = origins.FirstOrDefault() ?? "http://localhost:4200";
+            }
+            var successPath = stripeCfg?["SuccessPath"] ?? "/checkout/gracias";
+            var cancelPath = stripeCfg?["CancelPath"] ?? "/cart";
+            var successUrl = CombineUrl(baseUrl, successPath);
+            successUrl = AppendQuery(successUrl, "orderId", result.OrderId.ToString());
+            var cancelUrl = CombineUrl(baseUrl, cancelPath);
             try
             {
                 checkoutUrl = await _stripe.CreateCheckoutAsync(result.OrderId, req.ReservationToken, successUrl, cancelUrl, HttpContext.RequestAborted);
@@ -141,8 +159,9 @@ public sealed class OrdersController : ControllerBase
         catch (KeyNotFoundException) { return NotFound(); }
         catch (UnauthorizedAccessException) { return Forbid(); }
 
-        // minimal HTML response redirecting back to SPA profile
-        var html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"0;url=/perfil\"><title>Sandbox Payment</title></head><body>Sandbox payment successful. Redirecting…</body></html>";
+        // minimal HTML response redirecting back to SPA confirmation page
+        var successPath = AppendQuery("/checkout/gracias", "orderId", orderId.ToString());
+        var html = $"<!DOCTYPE html><html><head><meta charset=\\\"utf-8\\\"><meta http-equiv=\\\"refresh\\\" content=\\\"0;url={successPath}\\\"><title>Sandbox Payment</title></head><body>Sandbox payment successful. Redirecting…</body></html>";
         return Content(html, "text/html");
     }
 
@@ -186,5 +205,12 @@ public sealed class OrdersController : ControllerBase
         if (string.IsNullOrWhiteSpace(baseUrl)) return path;
         if (string.IsNullOrWhiteSpace(path)) return baseUrl.TrimEnd('/');
         return baseUrl.TrimEnd('/') + (path.StartsWith('/') ? path : "/" + path);
+    }
+
+    private static string AppendQuery(string url, string key, string value)
+    {
+        if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(key) || value is null) return url;
+        var separator = url.Contains('?') ? '&' : '?';
+        return $"{url}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
     }
 }

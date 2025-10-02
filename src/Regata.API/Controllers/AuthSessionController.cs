@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Regata.Application.Interface;
+using System.Security.Claims;
 
 namespace Regata.API.Controllers;
  
@@ -31,9 +32,10 @@ public class AuthSessionController : ControllerBase
                         ?? User.Identity!.Name
                         ?? string.Empty;
             var isAdmin = User.IsInRole("Admin") || User.Claims.Any(c => c.Type.EndsWith("/role", StringComparison.OrdinalIgnoreCase) && string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
-            return Ok(new { authenticated = true, email, isAdmin });
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? User.FindFirstValue("uid");
+            return Ok(new { authenticated = true, email, isAdmin, userId });
         }
-        return Ok(new { authenticated = false, email = (string?)null, isAdmin = false });
+        return Ok(new { authenticated = false, email = (string?)null, isAdmin = false, userId = (string?)null });
     }
 
     [HttpPost("logout")]

@@ -1,0 +1,9 @@
+.git
+.vscode
+.DS_Store
+*.log
+**/bin
+**/obj
+regata-web/node_modules
+regata-web/dist
+postman

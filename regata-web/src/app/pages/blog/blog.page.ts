@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
+import { NgFor } from '@angular/common';
 
 @Component({
   standalone: true,
+  imports: [NgFor],
   template: `
     <article class="blog-page">
       <section class="blog-hero position-relative overflow-hidden text-white">

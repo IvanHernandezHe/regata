@@ -1,6 +1,6 @@
 import { signal, computed, Injectable, effect, inject } from '@angular/core';
 import { Product } from '../core/models/product.model';
-import { CartService } from '../core/cart.service';
+import { CartService, CartDto } from '../core/cart.service';
 import { AuthStore } from './auth.store';
 import { ToastService } from '../core/toast.service';
 import { DiscountsService, DiscountInfo } from '../core/discounts.service';
@@ -50,13 +50,19 @@ export class CartStore {
       const c = this.#coupon();
       try { c ? localStorage.setItem(this.#couponKey, JSON.stringify(c)) : localStorage.removeItem(this.#couponKey); } catch {}
     });
+    effect(() => {
+      const authUser = this.#auth.user();
+      if (!authUser) {
+        this.#api.forget();
+      }
+    });
   }
 
   // Reload current cart snapshot from server (if authenticated)
   reload() {
     if (!this.#auth.isAuthenticated()) return;
     this.#api.get().subscribe({
-      next: (res) => this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock }))),
+      next: (res) => this.replaceFromServer(res),
       error: () => {}
     });
   }
@@ -65,7 +71,7 @@ export class CartStore {
     if (this.#auth.isAuthenticated()) {
       this.#api.add(p.id, qty).subscribe({
         next: (res) => {
-          this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock })));
+          this.replaceFromServer(res);
           this.#toast.success('Producto agregado al carrito');
         },
         error: () => {
@@ -84,7 +90,7 @@ export class CartStore {
     if (this.#auth.isAuthenticated()) {
       this.#api.remove(id).subscribe({
         next: (res) => {
-          this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock })));
+          this.replaceFromServer(res);
           if (removed) this.#toast.showWithAction('Producto quitado', 'Deshacer', () => this.#undoRemove(removed));
         },
         error: () => { this.#removeLocal(id); if (removed) this.#toast.showWithAction('Producto quitado', 'Deshacer', () => this.#undoRemove(removed)); }
@@ -94,14 +100,16 @@ export class CartStore {
   clear() {
     if (this.#auth.isAuthenticated()) {
       this.#api.clear().subscribe({
-        next: (res) => { this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty }))); this.#toast.info('Carrito vaciado'); },
+        next: (res) => { this.replaceFromServer(res); this.#toast.info('Carrito vaciado'); },
         error: () => { this.#items.set([]); this.#setOrigin('local'); this.#toast.info('Carrito vaciado'); }
       });
     } else { this.#items.set([]); this.#setOrigin('local'); this.#toast.info('Carrito vaciado'); }
   }
 
-  replaceFromServer(items: CartItem[]) {
-    this.#items.set(items.map(i => ({ ...i })));
+  replaceFromServer(dto: CartDto) {
+    const items = dto.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock }));
+    this.#items.set(items);
+    this.#api.remember(dto.id);
     this.#setOrigin('server');
   }
 
@@ -155,7 +163,7 @@ export class CartStore {
     if (this.#auth.isAuthenticated()) {
       const body = items.map(i => ({ productId: i.productId, qty: i.qty }));
       this.#api.merge(body).subscribe({
-        next: (res) => this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock }))),
+        next: (res) => this.replaceFromServer(res),
         error: () => { this.#items.set(items); this.#setOrigin('local'); }
       });
     } else {
@@ -221,7 +229,7 @@ export class CartStore {
     if (prev) clearTimeout(prev);
     const t = setTimeout(() => {
       this.#api.setQty(id, qty).subscribe({
-        next: (res) => this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty, stock: (i as any).stock }))),
+        next: (res) => this.replaceFromServer(res),
         error: () => this.#toast.warning('No se pudo actualizar la cantidad')
       });
     }, 250);
@@ -246,7 +254,7 @@ export class CartStore {
   #undoRemove(item: CartItem) {
     if (this.#auth.isAuthenticated()) {
       this.#api.add(item.productId, item.qty).subscribe({
-        next: (res) => this.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty }))),
+        next: (res) => this.replaceFromServer(res),
         error: () => this.#addItemRaw(item)
       });
     } else {

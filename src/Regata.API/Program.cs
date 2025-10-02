@@ -110,14 +110,31 @@ try
         {
             var resetFlag = cfg["Database:ResetOnStart"];
             var envReset = Environment.GetEnvironmentVariable("RESET_DB");
-            if (string.Equals(resetFlag, "true", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(envReset, "true", StringComparison.OrdinalIgnoreCase))
+            var shouldReset = IsTrue(resetFlag) || IsTrue(envReset);
+            if (shouldReset)
             {
                 await db.Database.EnsureDeletedAsync();
             }
 
             await db.Database.MigrateAsync();
-            await Regata.Infrastructure.Seed.DataSeeder.SeedAsync(scope.ServiceProvider);
+
+            var seedFlag = cfg["Database:SeedOnStart"];
+            var envSeed = Environment.GetEnvironmentVariable("SEED_DB");
+            var shouldSeed = shouldReset || IsTrue(seedFlag) || IsTrue(envSeed);
+
+            if (!shouldSeed)
+            {
+                shouldSeed = !await db.Products.AsNoTracking().AnyAsync();
+            }
+
+            if (shouldSeed)
+            {
+                await Regata.Infrastructure.Seed.DataSeeder.SeedAsync(scope.ServiceProvider);
+            }
+            else
+            {
+                logger.LogInformation("Skipping data seeding because Database:SeedOnStart is false and data already exists.");
+            }
         }
         catch (Exception ex)
         {
@@ -146,6 +163,19 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static bool IsTrue(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return false;
+    }
+
+    return value.Equals("true", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("1", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("yes", StringComparison.OrdinalIgnoreCase)
+           || value.Equals("on", StringComparison.OrdinalIgnoreCase);
 }
 
 static string DescribeConnection(IConfiguration cfg)

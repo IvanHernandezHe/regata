@@ -9,6 +9,7 @@ export interface SessionInfo {
   authenticated: boolean;
   email: string | null;
   isAdmin?: boolean;
+  userId?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

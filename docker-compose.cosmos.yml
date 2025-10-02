@@ -1,30 +1,89 @@
-version: "3.8"
-
 services:
-  cosmos-emulator:
-    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
-    container_name: regata-cosmos-emulator
-    restart: unless-stopped
-    tty: true
+  postgres:
+    image: postgres:16-alpine
+    container_name: regata-postgres
     environment:
-      AZURE_COSMOS_EMULATOR_PARTITION_COUNT: 1
-      AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: "true"
-      AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE: 0.0.0.0
-    ports:
-      - "8081:8081"
-      - "8900:8900"
-      - "10250-10255:10250-10255"
+      POSTGRES_USER: regata
+      POSTGRES_PASSWORD: regata
+      POSTGRES_DB: regata
+      TZ: America/Monterrey
     volumes:
-      - cosmos-emulator-data:/data/cosmosdb
-    command:
-      - "--log-path=/data/log"
-      - "--endpoint=https://0.0.0.0:8081"
-      - "--key=C2y6yDjf5/R+ob0N8A7Cgv30VRjYHYfC6az4g=="
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "https://localhost:8081/_explorer/emulator.pem", "--insecure"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U regata -d regata"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Regata.API/Dockerfile
+    container_name: regata-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+
+      Database__Provider: Postgres
+      Database__Host: postgres
+      Database__Port: "5432"
+      Database__Database: regata
+      Database__Username: regata
+      Database__Password: regata
+      Database__SslMode: Disable
+      Database__SeedOnStart: "true"
+      Database__ResetOnStart: "false"
+
+      Payments__Provider: Stripe
+      Stripe__ApiKey: 
+      Stripe__PublishableKey: 
+      Stripe__ReturnUrlBase: http://localhost:4200
+
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: regata
+      DATABASE_USERNAME: regata
+      DATABASE_PASSWORD: regata
+      DATABASE_SSLMODE: Disable
+      SEED_DB: "true"
+      RESET_DB: "false"
+
+  web:
+    build:
+      context: ./regata-web
+      dockerfile: Dockerfile
+      target: dev
+    container_name: regata-web
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      NG_CLI_ANALYTICS: "false"
+
+  api-tests:
+    build:
+      context: .
+      dockerfile: src/Regata.API/Dockerfile
+      target: test-runner
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+    profiles:
+      - test
+
+  web-tests:
+    build:
+      context: ./regata-web
+      dockerfile: Dockerfile
+      target: test-runner
+    profiles:
+      - test
 
 volumes:
-  cosmos-emulator-data:
+  pgdata:

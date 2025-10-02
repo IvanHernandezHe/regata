@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using Regata.Domain.Orders;
 using Regata.Application.Interface;
 
@@ -76,7 +77,7 @@ public sealed class OrdersAdminController : ControllerBase
         return NoContent();
     }
 
-    public sealed record CreateOrderItem(Guid ProductId, int Qty);
+    public sealed record CreateOrderItem(Guid ProductId, [property: JsonPropertyName("qty")] int Qty);
     public sealed record CreateOrderShip(string Line1, string? Line2, string City, string State, string PostalCode, string Country = "MX");
     public sealed record CreateOrderRequest(Guid? UserId, string? UserEmail, string? DiscountCode, List<CreateOrderItem>? Items, CreateOrderShip? Shipping);
     [HttpPost]
@@ -104,7 +105,7 @@ public sealed class OrdersAdminController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = dto.Id }, dto);
     }
 
-    public sealed record UpsertItemRequest(Guid ProductId, int Qty);
+    public sealed record UpsertItemRequest(Guid ProductId, [property: JsonPropertyName("qty")] int Qty);
     [HttpPost("{id}/items")]
     public async Task<IActionResult> AddOrUpdateItem([FromRoute] Guid id, [FromBody] UpsertItemRequest body)
     {

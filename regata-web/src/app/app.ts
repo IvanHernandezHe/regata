@@ -35,7 +35,7 @@ export class App {
             const body = localItems.map(i => ({ productId: i.productId, qty: i.qty }));
             this.#cartApi.merge(body).subscribe({
               next: (res) => {
-                this.#cart.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty })));
+                this.#cart.replaceFromServer(res);
                 this.#toast.success('Carrito sincronizado con tu cuenta');
               },
               error: () => {
@@ -45,7 +45,7 @@ export class App {
           } else {
             // load server-side cart snapshot on boot/refresh
             this.#cartApi.get().subscribe({
-              next: (res) => this.#cart.replaceFromServer(res.items.map(i => ({ productId: i.productId, name: i.name, sku: i.sku, price: i.price, qty: i.qty }))),
+              next: (res) => this.#cart.replaceFromServer(res),
               error: () => {}
             });
           }

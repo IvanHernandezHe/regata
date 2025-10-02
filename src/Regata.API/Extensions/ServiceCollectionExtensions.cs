@@ -79,7 +79,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInventoryAdminService, InventoryAdminService>();
         services.AddScoped<IShippingCalculator, DefaultShippingCalculator>();
         services.AddScoped<Regata.Application.Interface.IEmailSender, EmailSender>();
-        services.AddHttpClient<Regata.Infrastructure.Integration.WebhookDispatcher>();
+        services.AddHttpClient();
+        services.AddSingleton<Regata.Infrastructure.Integration.WebhookDispatcher>();
         services.AddScoped<Regata.API.Payments.StripeCheckoutService>();
 
         var authBuilder = services.AddAuthentication();

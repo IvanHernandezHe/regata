@@ -55,6 +55,12 @@ import { WishlistStore } from '../../../state/wishlist.store';
             </button>
             <div class="dropdown-menu dropdown-menu-end show py-2" *ngIf="userMenuOpen" style="right:0; left:auto; min-width: 160px;">
               <a class="dropdown-item" routerLink="/perfil" (click)="userMenuOpen=false">Perfil</a>
+              <ng-container *ngIf="auth.isAdmin()">
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" routerLink="/admin/usuarios" (click)="userMenuOpen=false">Usuarios</a>
+                <a class="dropdown-item" routerLink="/admin/pedidos" (click)="userMenuOpen=false">Pedidos</a>
+                <a class="dropdown-item" routerLink="/admin/inventario" (click)="userMenuOpen=false">Inventario</a>
+              </ng-container>
               <button class="dropdown-item" type="button" (click)="logout()">Cerrar sesión</button>
             </div>
           </div>
@@ -80,6 +86,9 @@ import { WishlistStore } from '../../../state/wishlist.store';
           <li class="nav-item d-lg-none" *ngIf="!auth.isAuthenticated()"><a class="nav-link" [routerLink]="['/auth']" [queryParams]="{ login: 1 }" (click)="closeMenuOnSmall()">Iniciar sesión</a></li>
           <li class="nav-item d-lg-none" *ngIf="!auth.isAuthenticated()"><a class="nav-link" [routerLink]="['/auth']" [queryParams]="{ register: 1 }" (click)="closeMenuOnSmall()">Crear cuenta</a></li>
           <li class="nav-item d-lg-none" *ngIf="auth.isAuthenticated()"><a class="nav-link" routerLink="/perfil" (click)="closeMenuOnSmall()">Perfil</a></li>
+          <li class="nav-item d-lg-none" *ngIf="auth.isAdmin()"><a class="nav-link" routerLink="/admin/usuarios" (click)="closeMenuOnSmall()">Usuarios</a></li>
+          <li class="nav-item d-lg-none" *ngIf="auth.isAdmin()"><a class="nav-link" routerLink="/admin/pedidos" (click)="closeMenuOnSmall()">Pedidos</a></li>
+          <li class="nav-item d-lg-none" *ngIf="auth.isAdmin()"><a class="nav-link" routerLink="/admin/inventario" (click)="closeMenuOnSmall()">Inventario</a></li>
           <li class="nav-item d-lg-none" *ngIf="auth.isAuthenticated()"><a class="nav-link" routerLink="/guardados" (click)="closeMenuOnSmall()">Guardados</a></li>
           <li class="nav-item d-lg-none" *ngIf="auth.isAuthenticated()"><a class="nav-link" href="#" (click)="$event.preventDefault(); logout();">Cerrar sesión</a></li>
         </ul>
