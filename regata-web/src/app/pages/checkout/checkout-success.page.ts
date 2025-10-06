@@ -101,6 +101,28 @@ import { CartStore } from '../../state/cart.store';
                 <div class="d-flex justify-content-between fw-bold pt-2 border-top"><span>Total pagado</span><span>{{ order()!.total | currency:order()!.currency }}</span></div>
               </div>
             </div>
+            <div class="card p-3">
+              <div class="fw-semibold mb-1">Dirección de envío</div>
+              <ng-container *ngIf="order()!.shipping.line1; else noShipping">
+                <div>{{ order()!.shipping.line1 }}</div>
+                <div *ngIf="order()!.shipping.line2">{{ order()!.shipping.line2 }}</div>
+                <div class="text-muted small">{{ order()!.shipping.city }}, {{ order()!.shipping.state }} {{ order()!.shipping.postalCode }}</div>
+                <div class="text-muted small">{{ order()!.shipping.country }}</div>
+              </ng-container>
+              <ng-template #noShipping><div class="text-muted small">Guardaremos la dirección cuando completes tu perfil.</div></ng-template>
+            </div>
+            <div class="card p-3" *ngIf="order()!.shipping.trackingCode || order()!.shipping.trackingCarrier || order()!.shipping.shippedAtUtc; else trackingPlaceholder">
+              <div class="fw-semibold mb-1">Seguimiento</div>
+              <div class="mb-1">Paquetería: <strong>{{ order()!.shipping.trackingCarrier || '—' }}</strong></div>
+              <div class="mb-1" *ngIf="order()!.shipping.trackingCode">Guía: <code>{{ order()!.shipping.trackingCode }}</code></div>
+              <div class="text-muted small" *ngIf="order()!.shipping.shippedAtUtc">Enviado el {{ order()!.shipping.shippedAtUtc | date:'medium' }}</div>
+            </div>
+            <ng-template #trackingPlaceholder>
+              <div class="card p-3">
+                <div class="fw-semibold mb-1">Seguimiento</div>
+                <div class="text-muted small">Te avisaremos cuando tengamos la guía de envío.</div>
+              </div>
+            </ng-template>
             <div class="next-steps p-3">
               <h3 class="h6 fw-semibold">Próximos pasos</h3>
               <ul class="list-unstyled text-muted small mb-0">

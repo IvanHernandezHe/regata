@@ -10,6 +10,7 @@ export interface SessionInfo {
   email: string | null;
   isAdmin?: boolean;
   userId?: string | null;
+  emailConfirmed?: boolean | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -42,5 +43,22 @@ export class AuthService {
       tap(() => this.#store.clear()),
       finalize(() => this.session().subscribe({ error: () => {} }))
     );
+  }
+
+  forgotPassword(email: string) {
+    return this.#http.post(`${this.#base}/forgot-password`, { email });
+  }
+
+  resetPassword(email: string, token: string, newPassword: string) {
+    return this.#http.post(`${this.#base}/reset-password`, { email, token, newPassword });
+  }
+
+  sendConfirmation(email?: string) {
+    const body = email ? { email } : {};
+    return this.#http.post(`${this.#base}/send-confirmation`, body, { withCredentials: true });
+  }
+
+  confirmEmail(userId: string, token: string) {
+    return this.#http.post<{ confirmed: boolean }>(`${this.#base}/confirm-email`, { userId, token });
   }
 }

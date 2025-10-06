@@ -21,7 +21,21 @@ public sealed class OrdersService : IOrdersService
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.CreatedAtUtc)
             .Take(take)
-            .Select(o => new OrderSummaryDto(o.Id, o.Total, o.Status.ToString(), o.CreatedAtUtc))
+            .Select(o => new OrderSummaryDto(
+                o.Id,
+                o.Total,
+                o.Status.ToString(),
+                o.CreatedAtUtc,
+                new ShippingSnapshotDto(
+                    o.ShipLine1,
+                    o.ShipLine2,
+                    o.ShipCity,
+                    o.ShipState,
+                    o.ShipPostalCode,
+                    o.ShipCountry,
+                    o.ShipTrackingCarrier,
+                    o.ShipTrackingCode,
+                    o.ShippedAtUtc)))
             .ToListAsync(ct);
         return list;
     }
@@ -34,7 +48,17 @@ public sealed class OrdersService : IOrdersService
             .Where(i => i.OrderId == id)
             .Select(i => new OrderItemLineDto(i.ProductId, i.ProductName, i.ProductSku, i.Size, i.UnitPrice, i.Quantity, i.UnitPrice * i.Quantity))
             .ToListAsync(ct);
-        return new OrderDetailDto(order.Id, order.Total, order.Subtotal, order.DiscountAmount, order.ShippingCost, order.Currency, order.Status.ToString(), order.PaymentStatus.ToString(), order.PaymentProvider.ToString(), order.PaymentReference, order.CreatedAtUtc, items);
+        var shipping = new ShippingSnapshotDto(
+            order.ShipLine1,
+            order.ShipLine2,
+            order.ShipCity,
+            order.ShipState,
+            order.ShipPostalCode,
+            order.ShipCountry,
+            order.ShipTrackingCarrier,
+            order.ShipTrackingCode,
+            order.ShippedAtUtc);
+        return new OrderDetailDto(order.Id, order.Total, order.Subtotal, order.DiscountAmount, order.ShippingCost, order.Currency, order.Status.ToString(), order.PaymentStatus.ToString(), order.PaymentProvider.ToString(), order.PaymentReference, order.CreatedAtUtc, items, shipping);
     }
 
     public async Task<QuoteResponseDto> QuoteAsync(IReadOnlyList<CheckoutLineDto> items, string? discountCode, CancellationToken ct = default)

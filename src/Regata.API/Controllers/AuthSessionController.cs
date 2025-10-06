@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Regata.Application.Interface;
 using System.Security.Claims;
+using System.Linq;
 
 namespace Regata.API.Controllers;
  
@@ -16,15 +17,17 @@ public class AuthSessionController : ControllerBase
     private readonly IAuditLogger _audit;
     private readonly SignInManager<IdentityUser<Guid>> _signIn;
     private readonly IOptionsMonitor<CookieAuthenticationOptions> _cookieOptions;
-    public AuthSessionController(IAuditLogger audit, SignInManager<IdentityUser<Guid>> signIn, IOptionsMonitor<CookieAuthenticationOptions> cookieOptions)
+    private readonly UserManager<IdentityUser<Guid>> _users;
+    public AuthSessionController(IAuditLogger audit, SignInManager<IdentityUser<Guid>> signIn, IOptionsMonitor<CookieAuthenticationOptions> cookieOptions, UserManager<IdentityUser<Guid>> users)
     {
         _audit = audit;
         _signIn = signIn;
         _cookieOptions = cookieOptions;
+        _users = users;
     }
     [HttpGet("session")]
     [AllowAnonymous]
-    public IActionResult GetSession()
+    public async Task<IActionResult> GetSession()
     {
         if (User?.Identity?.IsAuthenticated == true)
         {
@@ -33,9 +36,15 @@ public class AuthSessionController : ControllerBase
                         ?? string.Empty;
             var isAdmin = User.IsInRole("Admin") || User.Claims.Any(c => c.Type.EndsWith("/role", StringComparison.OrdinalIgnoreCase) && string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? User.FindFirstValue("uid");
-            return Ok(new { authenticated = true, email, isAdmin, userId });
+            bool? emailConfirmed = null;
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                var user = await _users.GetUserAsync(User);
+                emailConfirmed = user?.EmailConfirmed;
+            }
+            return Ok(new { authenticated = true, email, isAdmin, userId, emailConfirmed });
         }
-        return Ok(new { authenticated = false, email = (string?)null, isAdmin = false, userId = (string?)null });
+        return Ok(new { authenticated = false, email = (string?)null, isAdmin = false, userId = (string?)null, emailConfirmed = (bool?)null });
     }
 
     [HttpPost("logout")]

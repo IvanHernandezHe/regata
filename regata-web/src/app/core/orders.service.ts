@@ -2,7 +2,25 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
-export interface OrderSummary { id: string; total: number; status: string; createdAtUtc: string; }
+export interface OrderShipping {
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  country: string | null;
+  trackingCarrier: string | null;
+  trackingCode: string | null;
+  shippedAtUtc: string | null;
+}
+
+export interface OrderSummary {
+  id: string;
+  total: number;
+  status: string;
+  createdAtUtc: string;
+  shipping: OrderShipping;
+}
 export interface OrderItemLine { productId: string; productName: string; productSku: string; size: string; unitPrice: number; quantity: number; lineTotal: number; }
 export interface OrderDetail {
   id: string;
@@ -17,13 +35,14 @@ export interface OrderDetail {
   paymentReference?: string | null;
   createdAtUtc: string;
   items: OrderItemLine[];
+  shipping: OrderShipping;
 }
 export interface CheckoutItem { productId: string; quantity: number; }
 export interface CheckoutRequest { items: CheckoutItem[]; discountCode?: string | null; reservationToken?: string | null; addressId?: string | null; }
 export interface ReserveRequest { items: CheckoutItem[]; ttlSeconds?: number; }
 export interface ReserveResponse { token: string; expiresAtUtc: string; }
 export interface CheckoutResponse { orderId: string; subtotal: number; discount: number; shipping: number; total: number; currency: string; checkoutUrl: string; }
-export interface QuoteResponse { subtotal: number; discount: number; shipping: number; total: number; currency: string; items: any[]; }
+export interface QuoteResponse { subtotal: number; discount: number; shipping: number; total: number; currency: string; items: OrderItemLine[]; }
 
 @Injectable({ providedIn: 'root' })
 export class OrdersService {

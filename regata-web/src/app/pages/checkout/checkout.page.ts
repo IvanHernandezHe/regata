@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CartStore } from '../../state/cart.store';
 import { CurrencyPipe, NgIf, NgFor, DatePipe } from '@angular/common';
-import { OrdersService } from '../../core/orders.service';
+import { OrdersService, QuoteResponse } from '../../core/orders.service';
 import { AddressesService, AddressDto } from '../../core/addresses.service';
 import { FormsModule } from '@angular/forms';
 import { ConfigService } from '../../core/config.service';
@@ -54,19 +54,22 @@ import { ConfigService } from '../../core/config.service';
           <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Importe</th></tr></thead>
           <tbody>
             <tr *ngFor="let l of summary.items">
-              <td>{{ l.brand }} {{ l.modelName }} {{ l.size }}</td>
+              <td>
+                <div class="fw-semibold">{{ l.productName }}</div>
+                <div class="text-muted small">SKU {{ l.productSku }}</div>
+              </td>
               <td>{{ l.quantity }}</td>
-              <td>{{ l.unitPrice | currency:'MXN' }}</td>
-              <td>{{ l.lineTotal | currency:'MXN' }}</td>
+              <td>{{ l.unitPrice | currency:summary.currency }}</td>
+              <td>{{ l.lineTotal | currency:summary.currency }}</td>
             </tr>
           </tbody>
         </table>
       </div>
       <div class="d-flex justify-content-end flex-column align-items-end gap-1">
-        <div>Subtotal: {{ summary.subtotal | currency:'MXN' }}</div>
-        <div *ngIf="summary.discount>0" class="text-success">Descuento: −{{ summary.discount | currency:'MXN' }}</div>
-        <div>Envío: {{ summary.shipping | currency:'MXN' }}</div>
-        <div class="h5">Total: {{ summary.total | currency:'MXN' }}</div>
+        <div>Subtotal: {{ summary.subtotal | currency:summary.currency }}</div>
+        <div *ngIf="summary.discount>0" class="text-success">Descuento: −{{ summary.discount | currency:summary.currency }}</div>
+        <div>Envío: {{ summary.shipping | currency:summary.currency }}</div>
+        <div class="h5">Total: {{ summary.total | currency:summary.currency }}</div>
       </div>
     </div>
     <div class="mt-3">
@@ -87,7 +90,7 @@ export class CheckoutPage {
   paying = false;
   quoting = false;
   payLabel = 'Pagar (sandbox)';
-  summary: { subtotal: number; discount: number; shipping: number; total: number; items: any[] } | null = null;
+  summary: QuoteResponse | null = null;
   reservationToken: string | null = null;
   reservationExpires: string | null = null;
   addresses: AddressDto[] = [];
@@ -118,7 +121,7 @@ export class CheckoutPage {
     this.quoting = true;
     const discountCode = this.cart.couponCode();
     this.#orders.quote({ items, discountCode: discountCode || undefined }).subscribe({
-      next: (res) => { this.summary = { subtotal: res.subtotal, discount: res.discount, shipping: res.shipping, total: res.total, items: res.items as any[] }; this.quoting = false; },
+      next: (res) => { this.summary = res; this.quoting = false; },
       error: () => { this.quoting = false; alert('No se pudo calcular el total'); }
     });
   }

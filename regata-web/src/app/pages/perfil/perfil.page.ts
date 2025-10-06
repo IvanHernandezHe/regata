@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { AccountService, AccountMe } from '../../core/account.service';
 import { OrdersService, OrderSummary } from '../../core/orders.service';
+import { AddressesService, AddressDto } from '../../core/addresses.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -31,6 +32,7 @@ import { FormsModule } from '@angular/forms';
       <div class="tabs px-3 d-flex gap-2">
         <button class="tab-btn" [class.active]="tab==='perfil'" (click)="tab='perfil'">Perfil</button>
         <button class="tab-btn" [class.active]="tab==='seguridad'" (click)="tab='seguridad'">Seguridad</button>
+        <button class="tab-btn" [class.active]="tab==='direcciones'" (click)="tab='direcciones'">Direcciones</button>
         <button class="tab-btn" [class.active]="tab==='pedidos'" (click)="tab='pedidos'">Pedidos</button>
       </div>
 
@@ -74,16 +76,96 @@ import { FormsModule } from '@angular/forms';
         </form>
       </div>
 
+      <div class="p-3" *ngIf="tab==='direcciones'">
+        <div class="row g-3">
+          <div class="col-12 col-lg-7">
+            <div *ngIf="addressesLoading" class="text-muted">Cargando direcciones…</div>
+            <ng-container *ngIf="!addressesLoading">
+              <ng-container *ngIf="addresses.length; else noAddress">
+                <div class="d-grid gap-3">
+                  <div class="border rounded-3 p-3" *ngFor="let addr of addresses" [class.border-primary-subtle]="addr.isDefault" [class.border-primary]="addr.isDefault">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                      <div>
+                        <div class="fw-semibold">{{ addr.line1 }}<span *ngIf="addr.line2">, {{ addr.line2 }}</span></div>
+                        <div class="text-muted small">{{ addr.city }}, {{ addr.state }} {{ addr.postalCode }} · {{ addr.country }}</div>
+                        <span class="badge text-bg-secondary mt-2" *ngIf="addr.isDefault">Predeterminada</span>
+                      </div>
+                      <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary" (click)="editAddress(addr)" [disabled]="addressSaving">Editar</button>
+                        <button type="button" class="btn btn-outline-primary" (click)="setDefaultAddress(addr.id)" [disabled]="addr.isDefault || defaultingAddressId===addr.id">Predeterminar</button>
+                        <button type="button" class="btn btn-outline-danger" (click)="removeAddress(addr.id)" [disabled]="removingAddressId===addr.id">Eliminar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </ng-container>
+            <ng-template #noAddress>
+              <div class="alert alert-info mb-0">Aún no tienes direcciones guardadas.</div>
+            </ng-template>
+          </div>
+          <div class="col-12 col-lg-5">
+            <div class="card p-3 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="h6 mb-0">{{ editingAddressId ? 'Editar dirección' : 'Nueva dirección' }}</h5>
+                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="resetAddressForm()" [disabled]="addressSaving">Limpiar</button>
+              </div>
+              <form class="row g-2" (submit)="submitAddress($event)">
+                <div class="col-12">
+                  <label class="form-label">Calle y número</label>
+                  <input class="form-control" [(ngModel)]="addressForm.line1" name="addrLine1" required placeholder="Av. Siempre Viva 742" [disabled]="addressSaving"/>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Interior / referencias</label>
+                  <input class="form-control" [(ngModel)]="addressForm.line2" name="addrLine2" placeholder="Depto. 2B" [disabled]="addressSaving"/>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Ciudad</label>
+                  <input class="form-control" [(ngModel)]="addressForm.city" name="addrCity" required [disabled]="addressSaving"/>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Estado</label>
+                  <input class="form-control" [(ngModel)]="addressForm.state" name="addrState" required [disabled]="addressSaving"/>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Código postal</label>
+                  <input class="form-control" [(ngModel)]="addressForm.postalCode" name="addrPostal" required [disabled]="addressSaving"/>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label">País</label>
+                  <input class="form-control" [(ngModel)]="addressForm.country" name="addrCountry" [disabled]="addressSaving"/>
+                </div>
+                <div class="col-12">
+                  <label class="form-check">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="addressForm.isDefault" name="addrDefault" [disabled]="addressSaving"/>
+                    <span class="form-check-label">Marcar como predeterminada</span>
+                  </label>
+                </div>
+                <div class="col-12 d-flex gap-2">
+                  <button class="btn btn-dark" type="submit" [disabled]="addressSaving">{{ editingAddressId ? 'Actualizar' : 'Guardar' }}</button>
+                  <button class="btn btn-outline-secondary" type="button" *ngIf="editingAddressId" (click)="resetAddressForm()" [disabled]="addressSaving">Cancelar</button>
+                </div>
+              </form>
+              <div class="text-danger mt-2" *ngIf="addressError">{{ addressError }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="p-3" *ngIf="tab==='pedidos'">
         <div *ngIf="orders.length; else noOrders">
           <div class="table-responsive">
             <table class="table align-middle">
-              <thead><tr><th>Folio</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+              <thead><tr><th>Folio</th><th>Fecha</th><th>Total</th><th>Envío</th><th>Estado</th><th></th></tr></thead>
               <tbody>
                 <tr *ngFor="let o of orders">
                   <td class="small"><a [routerLink]="['/orders', o.id]">{{ o.id }}</a></td>
                   <td>{{ o.createdAtUtc | date:'medium' }}</td>
                   <td>{{ o.total | currency:'MXN' }}</td>
+                  <td>
+                    <div class="small">{{ o.shipping.city || '—' }}<span *ngIf="o.shipping.state">, {{ o.shipping.state }}</span></div>
+                    <div class="text-muted small" *ngIf="o.shipping.trackingCode">Guía: <code>{{ o.shipping.trackingCode }}</code></div>
+                  </td>
                   <td>{{ o.status }}</td>
                   <td class="text-end">
                     <button *ngIf="o.status==='Created'" class="btn btn-sm btn-outline-danger" (click)="cancel(o.id)">Cancelar</button>
@@ -108,8 +190,9 @@ export class PerfilPage implements OnInit {
   #account = inject(AccountService);
   #authApi = inject(AuthService);
   #ordersApi = inject(OrdersService);
+  #addressesApi = inject(AddressesService);
   me: AccountMe | null = null;
-  tab: 'perfil' | 'seguridad' | 'pedidos' = 'perfil';
+  tab: 'perfil' | 'seguridad' | 'direcciones' | 'pedidos' = 'perfil';
   // perfil
   profile: { displayName: string; phoneNumber: string } = { displayName: '', phoneNumber: '' };
   saving = false; saved = false; error = '';
@@ -119,6 +202,23 @@ export class PerfilPage implements OnInit {
   // pedidos
   orders: OrderSummary[] = [];
   canceling = false;
+  // direcciones
+  addresses: AddressDto[] = [];
+  addressesLoading = false;
+  addressSaving = false;
+  addressError = '';
+  editingAddressId: string | null = null;
+  defaultingAddressId: string | null = null;
+  removingAddressId: string | null = null;
+  addressForm: { line1: string; line2: string; city: string; state: string; postalCode: string; country: string; isDefault: boolean } = {
+    line1: '',
+    line2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'MX',
+    isDefault: false
+  };
 
   ngOnInit() {
     this.refresh();
@@ -131,6 +231,7 @@ export class PerfilPage implements OnInit {
         this.profile.displayName = m.displayName || '';
         this.profile.phoneNumber = m.phoneNumber || '';
         this.loadOrders();
+        this.loadAddresses();
       },
       error: () => (this.me = null)
     });
@@ -138,6 +239,117 @@ export class PerfilPage implements OnInit {
 
   loadOrders() {
     this.#ordersApi.listMine().subscribe({ next: (o) => (this.orders = o), error: () => (this.orders = []) });
+  }
+
+  loadAddresses() {
+    this.addressesLoading = true;
+    this.#addressesApi.list().subscribe({
+      next: (list) => {
+        this.addresses = list;
+        this.addressesLoading = false;
+        if (!this.editingAddressId && !this.addressForm.line1 && !this.addressForm.city) {
+          this.addressForm.isDefault = list.length === 0;
+        }
+        if (this.editingAddressId) {
+          const current = list.find(a => a.id === this.editingAddressId);
+          if (!current) {
+            this.resetAddressForm();
+          }
+        }
+      },
+      error: () => {
+        this.addresses = [];
+        this.addressesLoading = false;
+      }
+    });
+  }
+
+  editAddress(addr: AddressDto) {
+    this.editingAddressId = addr.id;
+    this.addressForm = {
+      line1: addr.line1,
+      line2: addr.line2 ?? '',
+      city: addr.city,
+      state: addr.state,
+      postalCode: addr.postalCode,
+      country: addr.country,
+      isDefault: addr.isDefault
+    };
+    this.addressError = '';
+    this.tab = 'direcciones';
+  }
+
+  setDefaultAddress(id: string) {
+    if (!id) return;
+    this.defaultingAddressId = id;
+    this.#addressesApi.setDefault(id).subscribe({
+      next: () => {
+        this.defaultingAddressId = null;
+        this.loadAddresses();
+      },
+      error: () => {
+        this.defaultingAddressId = null;
+        alert('No se pudo actualizar la dirección predeterminada.');
+      }
+    });
+  }
+
+  removeAddress(id: string) {
+    if (!id) return;
+    if (!confirm('¿Eliminar esta dirección?')) return;
+    this.removingAddressId = id;
+    this.#addressesApi.remove(id).subscribe({
+      next: () => {
+        this.removingAddressId = null;
+        if (this.editingAddressId === id) {
+          this.resetAddressForm();
+        }
+        this.loadAddresses();
+      },
+      error: () => {
+        this.removingAddressId = null;
+        alert('No se pudo eliminar la dirección.');
+      }
+    });
+  }
+
+  submitAddress(e: Event) {
+    e.preventDefault();
+    if (!this.addressForm.line1 || !this.addressForm.city || !this.addressForm.state || !this.addressForm.postalCode) {
+      this.addressError = 'Completa los campos obligatorios.';
+      return;
+    }
+    this.addressError = '';
+    this.addressSaving = true;
+    const payload = {
+      line1: this.addressForm.line1,
+      line2: this.addressForm.line2 || undefined,
+      city: this.addressForm.city,
+      state: this.addressForm.state,
+      postalCode: this.addressForm.postalCode,
+      country: this.addressForm.country || 'MX',
+      isDefault: this.addressForm.isDefault
+    };
+    const handler = this.editingAddressId
+      ? this.#addressesApi.update(this.editingAddressId, payload)
+      : this.#addressesApi.create(payload);
+    handler.subscribe({
+      next: () => {
+        this.addressSaving = false;
+        this.resetAddressForm();
+        this.loadAddresses();
+      },
+      error: (err) => {
+        this.addressSaving = false;
+        this.addressError = this.#msg(err);
+      }
+    });
+  }
+
+  resetAddressForm() {
+    this.editingAddressId = null;
+    this.addressForm = { line1: '', line2: '', city: '', state: '', postalCode: '', country: 'MX', isDefault: this.addresses.length === 0 };
+    this.addressError = '';
   }
 
   cancel(id: string) {

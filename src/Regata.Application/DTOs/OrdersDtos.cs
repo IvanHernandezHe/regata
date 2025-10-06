@@ -4,7 +4,8 @@ public sealed record OrderSummaryDto(
     Guid Id,
     decimal Total,
     string Status,
-    DateTime CreatedAtUtc
+    DateTime CreatedAtUtc,
+    ShippingSnapshotDto Shipping
 );
 
 public sealed record OrderItemLineDto(
@@ -29,7 +30,8 @@ public sealed record OrderDetailDto(
     string PaymentProvider,
     string? PaymentReference,
     DateTime CreatedAtUtc,
-    IReadOnlyList<OrderItemLineDto> Items
+    IReadOnlyList<OrderItemLineDto> Items,
+    ShippingSnapshotDto Shipping
 );
 
 public sealed record CheckoutLineDto(Guid ProductId, int Quantity);
@@ -53,3 +55,15 @@ public sealed record CheckoutResponseDto(
 );
 
 public sealed record ReserveResponseDto(string Token, DateTime ExpiresAtUtc);
+
+public sealed record ShippingSnapshotDto(
+    string? Line1,
+    string? Line2,
+    string? City,
+    string? State,
+    string? PostalCode,
+    string? Country,
+    string? TrackingCarrier,
+    string? TrackingCode,
+    DateTime? ShippedAtUtc
+);
