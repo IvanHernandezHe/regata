@@ -4,10 +4,10 @@
 
 ```bash
 docker run \
-  --name regata-postgres \
+  --name roue-postgres \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=regata \
+  -e POSTGRES_DB=roue \
   -p 5432:5432 \
   -d postgres:15-alpine
 ```
@@ -17,13 +17,13 @@ La imagen oficial es multi-arquitectura, así que funciona en Apple Silicon.
 Para detener/iniciar posteriormente:
 
 ```bash
-docker stop regata-postgres
-docker start regata-postgres
+docker stop roue-postgres
+docker start roue-postgres
 ```
 
 ## 2. Configuración de la API
 
-`appsettings.json` ya apunta a `Host=localhost; Port=5432; Database=regata; Username=postgres; Password=postgres`.
+`appsettings.json` ya apunta a `Host=localhost; Port=5432; Database=roue; Username=postgres; Password=postgres`.
 
 En desarrollo (`appsettings.Development.json`) se forzó el mismo host, así que no necesitas valores adicionales. Solo asegúrate de que el puerto 5432 esté libre.
 
@@ -42,12 +42,12 @@ Si prefieres hacerlo manualmente:
 
 ```bash
 dotnet ef database update \
-  --project src/Regata.Infrastructure/Regata.Infrastructure.csproj \
-  --startup-project src/Regata.API/Regata.API.csproj
+  --project src/Roue.Infrastructure/Roue.Infrastructure.csproj \
+  --startup-project src/Roue.API/Roue.API.csproj
 ```
 
 ```bash
-dotnet run --project src/Regata.API/Regata.API.csproj
+dotnet run --project src/Roue.API/Roue.API.csproj
 ```
 
 ## 4. Probar conexión
@@ -55,9 +55,9 @@ dotnet run --project src/Regata.API/Regata.API.csproj
 - **psql** (opcional):
 
   ```bash
-  docker exec -it regata-postgres psql -U postgres -d regata -c "SELECT COUNT(*) FROM \"Products\";"
+  docker exec -it roue-postgres psql -U postgres -d roue -c "SELECT COUNT(*) FROM \"Products\";"
   ```
 
-- **Azure Data Studio / DBeaver**: crea conexión PostgreSQL con host `localhost`, puerto `5432`, usuario `postgres`, contraseña `postgres`, base `regata`.
+- **Azure Data Studio / DBeaver**: crea conexión PostgreSQL con host `localhost`, puerto `5432`, usuario `postgres`, contraseña `postgres`, base `roue`.
 
 Con esto podrás seguir desarrollando sin esperar a la cuenta Cosmos. Más adelante puedes volver a la opción NoSQL usando el seeder dedicado.

@@ -11,7 +11,7 @@ This publishes the HTTPS endpoint on `https://localhost:8081/` and the data plan
 ## Export the TLS certificate (Linux/macOS)
 
 ```bash
-docker exec regata-cosmos-emulator cat /usr/local/share/ca-certificates/emulatorcert.crt \
+docker exec roue-cosmos-emulator cat /usr/local/share/ca-certificates/emulatorcert.crt \
   | sudo tee /usr/local/share/ca-certificates/cosmos-emulator.crt >/dev/null
 sudo update-ca-certificates
 ```
@@ -19,7 +19,7 @@ sudo update-ca-certificates
 On Windows, run:
 
 ```powershell
-docker exec regata-cosmos-emulator powershell -Command \
+docker exec roue-cosmos-emulator powershell -Command \
   "Get-Content C:\\CosmosEmulator\\emulatorcert.cer" \
   | Out-File -FilePath cosmos-emulator.cer -Encoding byte
 Import-Certificate -FilePath .\\cosmos-emulator.cer -CertStoreLocation Cert:\\CurrentUser\\Root
@@ -35,7 +35,7 @@ Restart Azure Data Studio or your browser after trusting the certificate.
 4. Use these defaults:
    - Account Endpoint: `https://localhost:8081/`
    - Primary Key: `C2y6yDjf5/R+ob0N8A7Cgv30VRjYHYfC6az4g==`
-   - Account Name: `regata-local`
+   - Account Name: `roue-local`
 5. Connect to browse databases, containers, and documents.
 
 The same credentials are used by the seeder tool and application defaults.
@@ -45,7 +45,7 @@ The same credentials are used by the seeder tool and application defaults.
 Run the console seeder after the emulator is online:
 
 ```bash
-dotnet run --project tools/Regata.CosmosSeeder/Regata.CosmosSeeder.csproj
+dotnet run --project tools/Roue.CosmosSeeder/Roue.CosmosSeeder.csproj
 ```
 
 Override the endpoint/key with environment variables if you are targeting a managed Azure Cosmos DB account:
@@ -53,6 +53,6 @@ Override the endpoint/key with environment variables if you are targeting a mana
 ```bash
 COSMOS_ENDPOINT="https://<account>.documents.azure.com:443/" \
 COSMOS_KEY="<primary-key>" \
-COSMOS_DATABASE="regata-nosql" \
-dotnet run --project tools/Regata.CosmosSeeder/Regata.CosmosSeeder.csproj
+COSMOS_DATABASE="roue-nosql" \
+dotnet run --project tools/Roue.CosmosSeeder/Roue.CosmosSeeder.csproj
 ```

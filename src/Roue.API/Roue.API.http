@@ -1,0 +1,16 @@
+@Roue.API_HostAddress = http://localhost:5238
+
+### Auth: register (cookies)
+POST {{Roue.API_HostAddress}}/api/auth/register?useCookies=true
+Content-Type: application/json
+
+{ "email": "test@example.com", "password": "Passw0rd!" }
+
+### Auth: login (cookies)
+POST {{Roue.API_HostAddress}}/api/auth/login?useCookies=true&useSessionCookies=true
+Content-Type: application/json
+
+{ "email": "test@example.com", "password": "Passw0rd!" }
+
+### Audit search (requires auth)
+GET {{Roue.API_HostAddress}}/api/audit?page=1&pageSize=20

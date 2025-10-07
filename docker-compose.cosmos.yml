@@ -1,16 +1,17 @@
+name: roue
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: regata-postgres
+    container_name: roue-postgres
     environment:
-      POSTGRES_USER: regata
-      POSTGRES_PASSWORD: regata
-      POSTGRES_DB: regata
+      POSTGRES_USER: roue
+      POSTGRES_PASSWORD: roue
+      POSTGRES_DB: roue
       TZ: America/Monterrey
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U regata -d regata"]
+      test: ["CMD-SHELL", "pg_isready -U roue -d roue"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -21,8 +22,8 @@ services:
   api:
     build:
       context: .
-      dockerfile: src/Regata.API/Dockerfile
-    container_name: regata-api
+      dockerfile: src/Roue.API/Dockerfile
+    container_name: roue-api
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,9 +35,9 @@ services:
       Database__Provider: Postgres
       Database__Host: postgres
       Database__Port: "5432"
-      Database__Database: regata
-      Database__Username: regata
-      Database__Password: regata
+      Database__Database: roue
+      Database__Username: roue
+      Database__Password: roue
       Database__SslMode: Disable
       Database__SeedOnStart: "true"
       Database__ResetOnStart: "false"
@@ -44,14 +45,14 @@ services:
       Payments__Provider: Stripe
       Stripe__ApiKey:
       Stripe__PublishableKey:
-      Stripe__ReturnUrlBase: http://localhost:4200
+      Stripe__ReturnUrlBase: http://localhost:8080
 
       # (opcionales / redundantes, puedes limpiarlos si no se usan)
       DATABASE_HOST: postgres
       DATABASE_PORT: "5432"
-      DATABASE_NAME: regata
-      DATABASE_USERNAME: regata
-      DATABASE_PASSWORD: regata
+      DATABASE_NAME: roue
+      DATABASE_USERNAME: roue
+      DATABASE_PASSWORD: roue
       DATABASE_SSLMODE: Disable
       SEED_DB: "true"
       RESET_DB: "false"
@@ -61,17 +62,19 @@ services:
 
   web:
     build:
-      context: ./regata-web
+      context: ./roue-web
       dockerfile: Dockerfile
       target: dev
-    container_name: regata-web
+    container_name: roue-web
     depends_on:
       api:
         condition: service_started
     environment:
       NODE_ENV: development
       NG_CLI_ANALYTICS: "false"
-    # Si usas `ng serve` dentro del contenedor:
+    # Si usas `ng serve` dentro del contenedor (solo en dev):
+    profiles:
+      - dev
     ports:
       - "4200:4200"
     # IMPORTANTE: asegúrate que el comando de arranque exponga 0.0.0.0
@@ -81,7 +84,7 @@ services:
   api-tests:
     build:
       context: .
-      dockerfile: src/Regata.API/Dockerfile
+      dockerfile: src/Roue.API/Dockerfile
       target: test-runner
     depends_on:
       postgres:
@@ -93,7 +96,7 @@ services:
 
   web-tests:
     build:
-      context: ./regata-web
+      context: ./roue-web
       dockerfile: Dockerfile
       target: test-runner
     profiles:

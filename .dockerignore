@@ -4,6 +4,6 @@
 *.log
 **/bin
 **/obj
-regata-web/node_modules
-regata-web/dist
+roue-web/node_modules
+roue-web/dist
 postman

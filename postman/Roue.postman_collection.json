@@ -1,0 +1,177 @@
+{
+  "info": {
+    "_postman_id": "b2d9f7f2-5b9e-4f6b-9a5e-0a2f2a0b1c55",
+    "name": "Roue API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección Postman para validar los endpoints de Roue API. Usa la variable {{baseUrl}} para apuntar al servidor (por defecto http://localhost:5238). La autenticación es basada en cookies (ASP.NET Identity). Ejecuta primero login o usa el flujo externo para establecer sesión."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5238" }
+  ],
+  "item": [
+    {
+      "name": "Health & Config",
+      "item": [
+        {
+          "name": "Health: GET /api/health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api","health"] }
+          }
+        },
+        {
+          "name": "Config: GET /api/config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/config", "host": ["{{baseUrl}}"], "path": ["api","config"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Endpoints de sesión y autenticación. La API usa cookies; Postman almacenará la cookie en el jar al llamar login/external/callback.",
+      "item": [
+        {
+          "name": "Session: GET /api/auth/session",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/auth/session", "host": ["{{baseUrl}}"], "path": ["api","auth","session"] } }
+        },
+        {
+          "name": "Logout: POST /api/auth/logout",
+          "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","auth","logout"] } }
+        },
+        {
+          "name": "Login (Identity): POST /api/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"P@ssw0rd!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login?useCookies=true", "host": ["{{baseUrl}}"], "path": ["api","auth","login"], "query": [{"key":"useCookies","value":"true"}] }
+          },
+          "description": "Requiere MapIdentityApi. useCookies=true para establecer cookie de sesión."
+        },
+        {
+          "name": "Register (Identity): POST /api/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"P@ssw0rd!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] }
+          },
+          "description": "Requiere MapIdentityApi."
+        },
+        {
+          "name": "External Challenge: GET /api/auth/external/{provider}",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/auth/external/google?returnUrl={{baseUrl}}/", "host": ["{{baseUrl}}"], "path": ["api","auth","external","google"], "query": [{"key":"returnUrl","value":"{{baseUrl}}/"}] } },
+          "description": "Inicia OAuth (abre navegador). Cambia {provider} por google o facebook según configuración."
+        }
+      ]
+    },
+    {
+      "name": "Account (Auth)",
+      "item": [
+        { "name": "Me: GET /api/account/me", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/account/me", "host": ["{{baseUrl}}"], "path": ["api","account","me"] } } },
+        { "name": "Update Profile: PUT /api/account/profile", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"phoneNumber\": \"\",\n  \"displayName\": \"\"\n}"}, "url": { "raw": "{{baseUrl}}/api/account/profile", "host": ["{{baseUrl}}"], "path": ["api","account","profile"] } } },
+        { "name": "Change Password: POST /api/account/change-password", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"currentPassword\": \"\",\n  \"newPassword\": \"\"\n}"}, "url": { "raw": "{{baseUrl}}/api/account/change-password", "host": ["{{baseUrl}}"], "path": ["api","account","change-password"] } } }
+      ]
+    },
+    {
+      "name": "Products & Discounts",
+      "item": [
+        { "name": "Search: GET /api/products?q=", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/products?q=wheels", "host": ["{{baseUrl}}"], "path": ["api","products"], "query": [{"key":"q","value":"wheels"}] } } },
+        { "name": "Get By Id: GET /api/products/{id}", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api","products","{{productId}}"] } } },
+        { "name": "Discount Validate: GET /api/discounts/validate?code=", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/discounts/validate?code=PROMO10", "host": ["{{baseUrl}}"], "path": ["api","discounts","validate"], "query": [{"key":"code","value":"PROMO10"}] } } }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        { "name": "Get: GET /api/cart", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/cart", "host": ["{{baseUrl}}"], "path": ["api","cart"] } } },
+        { "name": "Merge (Auth): POST /api/cart/merge", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"items\": [ { \"productId\": \"{{productId}}\", \"qty\": 1 } ]\n}"}, "url": { "raw": "{{baseUrl}}/api/cart/merge", "host": ["{{baseUrl}}"], "path": ["api","cart","merge"] } } },
+        { "name": "Add Item: POST /api/cart/items", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productId\": \"{{productId}}\",\n  \"qty\": 1\n}"}, "url": { "raw": "{{baseUrl}}/api/cart/items", "host": ["{{baseUrl}}"], "path": ["api","cart","items"] } } },
+        { "name": "Set Qty: PUT /api/cart/items/{productId}", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"qty\": 2\n}"}, "url": { "raw": "{{baseUrl}}/api/cart/items/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api","cart","items","{{productId}}"] } } },
+        { "name": "Remove: DELETE /api/cart/items/{productId}", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/cart/items/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api","cart","items","{{productId}}"] } } },
+        { "name": "Clear: DELETE /api/cart/clear", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/cart/clear", "host": ["{{baseUrl}}"], "path": ["api","cart","clear"] } } }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        { "name": "List mine: GET /api/orders", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] } } },
+        { "name": "Get detail: GET /api/orders/{id}", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["api","orders","{{orderId}}"] } } },
+        { "name": "Quote (Anon): POST /api/orders/quote", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"items\": [ { \"productId\": \"{{productId}}\", \"quantity\": 1 } ],\n  \"discountCode\": \"\"\n}"}, "url": { "raw": "{{baseUrl}}/api/orders/quote", "host": ["{{baseUrl}}"], "path": ["api","orders","quote"] } } },
+        { "name": "Checkout (Auth): POST /api/orders/checkout", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"items\": [ { \"productId\": \"{{productId}}\", \"quantity\": 1 } ],\n  \"discountCode\": null,\n  \"reservationToken\": null,\n  \"addressId\": null\n}"}, "url": { "raw": "{{baseUrl}}/api/orders/checkout", "host": ["{{baseUrl}}"], "path": ["api","orders","checkout"] } } },
+        { "name": "Reserve (Anon): POST /api/orders/reserve", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"items\": [ { \"productId\": \"{{productId}}\", \"quantity\": 1 } ],\n  \"ttlSeconds\": 600\n}"}, "url": { "raw": "{{baseUrl}}/api/orders/reserve", "host": ["{{baseUrl}}"], "path": ["api","orders","reserve"] } } },
+        { "name": "Release (Anon): POST /api/orders/release", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"token\": \"{{reservationToken}}\"\n}"}, "url": { "raw": "{{baseUrl}}/api/orders/release", "host": ["{{baseUrl}}"], "path": ["api","orders","release"] } } },
+        { "name": "Pay Sandbox (Auth): GET /api/orders/pay/sandbox/{orderId}", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/orders/pay/sandbox/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["api","orders","pay","sandbox","{{orderId}}"] } } },
+        { "name": "Cancel (Auth): POST /api/orders/{orderId}/cancel", "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/orders/{{orderId}}/cancel", "host": ["{{baseUrl}}"], "path": ["api","orders","{{orderId}}","cancel"] } } }
+      ]
+    },
+    {
+      "name": "Addresses (Auth)",
+      "item": [
+        { "name": "List: GET /api/addresses", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/addresses", "host": ["{{baseUrl}}"], "path": ["api","addresses"] } } },
+        { "name": "Create: POST /api/addresses", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"line1\": \"\",\n  \"line2\": null,\n  \"city\": \"\",\n  \"state\": \"\",\n  \"postalCode\": \"\",\n  \"country\": \"MX\",\n  \"isDefault\": false\n}"}, "url": { "raw": "{{baseUrl}}/api/addresses", "host": ["{{baseUrl}}"], "path": ["api","addresses"] } } },
+        { "name": "Update: PUT /api/addresses/{id}", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"line1\": \"\",\n  \"line2\": null,\n  \"city\": \"\",\n  \"state\": \"\",\n  \"postalCode\": \"\",\n  \"country\": \"MX\",\n  \"isDefault\": false\n}"}, "url": { "raw": "{{baseUrl}}/api/addresses/{{addressId}}", "host": ["{{baseUrl}}"], "path": ["api","addresses","{{addressId}}"] } } },
+        { "name": "Set Default: POST /api/addresses/{id}/default", "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/addresses/{{addressId}}/default", "host": ["{{baseUrl}}"], "path": ["api","addresses","{{addressId}}","default"] } } },
+        { "name": "Delete: DELETE /api/addresses/{id}", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/addresses/{{addressId}}", "host": ["{{baseUrl}}"], "path": ["api","addresses","{{addressId}}"] } } }
+      ]
+    },
+    {
+      "name": "Wishlist (Auth)",
+      "item": [
+        { "name": "List: GET /api/wishlist", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/wishlist", "host": ["{{baseUrl}}"], "path": ["api","wishlist"] } } },
+        { "name": "Add: POST /api/wishlist/{productId}", "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/wishlist/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api","wishlist","{{productId}}"] } } },
+        { "name": "Remove: DELETE /api/wishlist/{productId}", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/wishlist/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api","wishlist","{{productId}}"] } } },
+        { "name": "Move to Cart: POST /api/wishlist/move-to-cart/{productId}", "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/wishlist/move-to-cart/{{productId}}?qty=1", "host": ["{{baseUrl}}"], "path": ["api","wishlist","move-to-cart","{{productId}}"], "query": [{"key":"qty","value":"1"}] } } }
+      ]
+    },
+    {
+      "name": "Admin (Auth: Admin role)",
+      "item": [
+        {
+          "name": "Inventory",
+          "item": [
+            { "name": "List: GET /api/admin/inventory", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/inventory", "host": ["{{baseUrl}}"], "path": ["api","admin","inventory"] } } },
+            { "name": "Transactions: GET /api/admin/inventory/transactions", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/inventory/transactions?productId={{productId}}&page=1&pageSize=50", "host": ["{{baseUrl}}"], "path": ["api","admin","inventory","transactions"], "query": [{"key":"productId","value":"{{productId}}"},{"key":"page","value":"1"},{"key":"pageSize","value":"50"}] } } },
+            { "name": "Adjust: POST /api/admin/inventory/adjust", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productId\": \"{{productId}}\",\n  \"delta\": 1,\n  \"reason\": \"ajuste\"\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/inventory/adjust", "host": ["{{baseUrl}}"], "path": ["api","admin","inventory","adjust"] } } }
+          ]
+        },
+        {
+          "name": "Orders",
+          "item": [
+            { "name": "List: GET /api/admin/orders", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/orders?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","admin","orders"], "query": [{"key":"page","value":"1"},{"key":"pageSize","value":"20"}] } } },
+            { "name": "Get: GET /api/admin/orders/{id}", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}"] } } },
+            { "name": "Create: POST /api/admin/orders", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"userId\": null,\n  \"userEmail\": \"customer@example.com\",\n  \"discountCode\": null,\n  \"items\": [ { \"productId\": \"{{productId}}\", \"qty\": 1 } ],\n  \"shipping\": { \"line1\": \"Calle 123\", \"line2\": null, \"city\": \"CDMX\", \"state\": \"CDMX\", \"postalCode\": \"01000\", \"country\": \"MX\" }\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/orders", "host": ["{{baseUrl}}"], "path": ["api","admin","orders"] } } },
+            { "name": "Set Status: POST /api/admin/orders/{id}/status", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"status\": \"Preparing\"\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}","status"] } } },
+            { "name": "Set Payment Status: POST /api/admin/orders/{id}/payment-status", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"paymentStatus\": \"Succeeded\"\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/payment-status", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}","payment-status"] } } },
+            { "name": "Set Shipment: POST /api/admin/orders/{id}/shipment", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"carrier\": \"DHL\",\n  \"trackingCode\": \"ABC123\",\n  \"shippedAtUtc\": null\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/shipment", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}","shipment"] } } },
+            { "name": "Add/Update Item: POST /api/admin/orders/{id}/items", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"productId\": \"{{productId}}\",\n  \"qty\": 1\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/items", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}","items"] } } },
+            { "name": "Set Item Qty: PUT /api/admin/orders/{id}/items/{productId}", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"qty\": 2\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/items/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}","items","{{productId}}"] } } },
+            { "name": "Remove Item: DELETE /api/admin/orders/{id}/items/{productId}", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/items/{{productId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}","items","{{productId}}"] } } },
+            { "name": "Update Shipping: PUT /api/admin/orders/{id}/shipping", "request": { "method": "PUT", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"line1\": \"Calle 123\",\n  \"line2\": null,\n  \"city\": \"CDMX\",\n  \"state\": \"CDMX\",\n  \"postalCode\": \"01000\",\n  \"country\": \"MX\"\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/shipping", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}","shipping"] } } },
+            { "name": "Set Discount: POST /api/admin/orders/{id}/discount", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\n  \"code\": \"PROMO10\"\n}"}, "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}/discount", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}","discount"] } } },
+            { "name": "Delete Order: DELETE /api/admin/orders/{id}", "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["api","admin","orders","{{orderId}}"] } } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Stripe Webhook: POST /api/payments/stripe/webhook",
+          "request": {
+            "method": "POST",
+            "header": [ {"key":"Content-Type","value":"application/json"}, {"key":"Stripe-Signature","value":"<signature>"} ],
+            "body": { "mode": "raw", "raw": "{\n  \"id\": \"evt_test\",\n  \"type\": \"payment_intent.succeeded\",\n  \"data\": { \"object\": { \"metadata\": { \"orderId\": \"{{orderId}}\" } } }\n}" },
+            "url": { "raw": "{{baseUrl}}/api/payments/stripe/webhook", "host": ["{{baseUrl}}"], "path": ["api","payments","stripe","webhook"] }
+          },
+          "description": "Para pruebas locales, puedes omitir la firma si el secreto no está configurado."
+        }
+      ]
+    }
+  ]
+}
